@@ -1,0 +1,2049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodexQuest — Anime Coding RPG</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void:#030610; --deep:#06091a; --surface:#0c1427; --card:#101c35;
+  --elevated:#152040; --hover:#1a2a50;
+  --c:#00f5ff; --p:#bf5fff; --pk:#ff2d78; --g:#ffd700; --gn:#39ff14; --o:#ff6b00;
+  --gc:0 0 20px rgba(0,245,255,.6),0 0 50px rgba(0,245,255,.2);
+  --gp:0 0 20px rgba(191,95,255,.6),0 0 50px rgba(191,95,255,.2);
+  --gpk:0 0 20px rgba(255,45,120,.6),0 0 50px rgba(255,45,120,.2);
+  --gg:0 0 20px rgba(255,215,0,.6),0 0 50px rgba(255,215,0,.2);
+  --t1:#e8f4ff; --t2:#7a9cc4; --t3:#3d5a80;
+  --bd1:rgba(0,245,255,.08); --bd2:rgba(0,245,255,.2); --bd3:rgba(0,245,255,.45);
+  --fd:'Orbitron',monospace; --fb:'Rajdhani',sans-serif; --fc:'Share Tech Mono',monospace;
+  --r4:4px; --r8:8px; --r16:16px; --r24:24px;
+  --tr:.18s ease; --trm:.3s ease;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--void);color:var(--t1);font-family:var(--fb);overflow-x:hidden;cursor:default}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--deep)}
+::-webkit-scrollbar-thumb{background:linear-gradient(var(--c),var(--p));border-radius:3px}
+h1,h2,h3,h4{font-family:var(--fd);font-weight:700;line-height:1.15;letter-spacing:.04em}
+a{text-decoration:none;color:var(--c);transition:var(--tr)}
+code,pre{font-family:var(--fc)}
+
+/* ── SCREENS ── */
+.screen{display:none;min-height:100vh;position:relative}
+.screen.active{display:block}
+
+/* ── CANVAS BG ── */
+#bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.35}
+
+/* ── LOADING ── */
+#loading{position:fixed;inset:0;background:var(--void);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .6s}
+#loading.gone{opacity:0;pointer-events:none}
+.load-logo{font-family:var(--fd);font-size:clamp(2rem,5vw,3.5rem);font-weight:900;letter-spacing:.2em;background:linear-gradient(135deg,var(--c),var(--p),var(--pk));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:logoPulse 2s ease infinite}
+.load-bar-wrap{width:220px;height:3px;background:var(--elevated);border-radius:2px;margin-top:1.5rem;overflow:hidden}
+.load-bar{height:100%;background:linear-gradient(90deg,var(--c),var(--p));border-radius:2px;width:0;transition:width .1s linear}
+.load-txt{font-family:var(--fc);font-size:.72rem;color:var(--t3);margin-top:.75rem;letter-spacing:.18em;min-height:1rem}
+@keyframes logoPulse{0%,100%{opacity:1}50%{opacity:.65}}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;height:62px;background:rgba(3,6,16,.88);backdrop-filter:blur(18px);border-bottom:1px solid var(--bd1);display:flex;align-items:center;padding:0 1.5rem}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:1320px;margin:0 auto}
+.nav-logo{display:flex;align-items:center;gap:.65rem;font-family:var(--fd);font-size:1.1rem;font-weight:900;letter-spacing:.1em;color:var(--t1);cursor:pointer}
+.nav-logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--c),var(--p));border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:var(--gc)}
+.nav-links{display:flex;align-items:center;gap:2rem;list-style:none}
+.nav-links a{font-family:var(--fd);font-size:.68rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--t2);position:relative;transition:var(--tr)}
+.nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;right:0;height:1px;background:var(--c);transform:scaleX(0);transition:var(--tr)}
+.nav-links a:hover,.nav-links a.active{color:var(--c)}
+.nav-links a:hover::after,.nav-links a.active::after{transform:scaleX(1)}
+.nav-right{display:flex;align-items:center;gap:.85rem}
+.nav-xp{font-family:var(--fd);font-size:.72rem;font-weight:700;color:var(--g);padding:.25rem .75rem;background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.2);border-radius:999px;cursor:pointer}
+.nav-avatar{font-size:1.35rem;cursor:pointer;transition:var(--tr)}
+.nav-avatar:hover{transform:scale(1.15)}
+
+/* ── TOAST ── */
+#toastWrap{position:fixed;top:74px;right:1.25rem;z-index:9000;display:flex;flex-direction:column;gap:.6rem;pointer-events:none}
+.toast{background:var(--card);border:1px solid var(--bd2);border-radius:var(--r8);padding:.85rem 1.2rem;min-width:260px;display:flex;align-items:flex-start;gap:.7rem;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:tIn .35s cubic-bezier(.4,0,.2,1);pointer-events:all}
+.toast.out{animation:tOut .25s ease forwards}
+.t-icon{font-size:1.25rem;flex-shrink:0}
+.t-title{font-family:var(--fd);font-size:.75rem;font-weight:700;color:var(--t1)}
+.t-msg{font-size:.82rem;color:var(--t2);margin-top:.1rem}
+@keyframes tIn{from{opacity:0;transform:translateX(80px)}to{opacity:1;transform:translateX(0)}}
+@keyframes tOut{to{opacity:0;transform:translateX(80px)}}
+
+/* ── XP POPUP ── */
+.xp-pop{position:fixed;pointer-events:none;font-family:var(--fd);font-size:1.6rem;font-weight:900;color:var(--g);text-shadow:0 0 20px var(--g);z-index:9999;animation:xpPop 2s ease forwards}
+@keyframes xpPop{0%{opacity:0;transform:translateY(0) scale(.5)}20%{opacity:1;transform:translateY(-30px) scale(1.2)}60%{opacity:1;transform:translateY(-80px) scale(1)}100%{opacity:0;transform:translateY(-140px) scale(.8)}}
+
+/* ── LEVEL UP ── */
+.lvl-overlay{position:fixed;inset:0;background:rgba(0,245,255,.03);z-index:9990;pointer-events:none;animation:lvlFlash 2s ease forwards}
+.lvl-text{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9991;font-family:var(--fd);font-size:clamp(2rem,6vw,5rem);font-weight:900;text-align:center;pointer-events:none;background:linear-gradient(135deg,var(--c),var(--p),var(--g));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:lvlTxt 2.5s ease forwards}
+@keyframes lvlFlash{0%,100%{opacity:0}15%,80%{opacity:1}50%{opacity:.6}}
+@keyframes lvlTxt{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}40%,75%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-65%) scale(.85)}}
+
+/* ── COMMON ── */
+.wrap{max-width:1320px;margin:0 auto;padding:0 1.5rem}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;padding:.7rem 1.6rem;border-radius:var(--r8);font-family:var(--fd);font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;border:none;cursor:pointer;transition:var(--trm);position:relative;overflow:hidden;white-space:nowrap}
+.btn-p{background:linear-gradient(135deg,var(--c),#0099bb);color:var(--void);box-shadow:0 4px 20px rgba(0,245,255,.25)}
+.btn-p:hover{box-shadow:var(--gc);transform:translateY(-1px)}
+.btn-s{background:transparent;color:var(--c);border:1px solid var(--bd3)}
+.btn-s:hover{background:rgba(0,245,255,.06);box-shadow:var(--gc)}
+.btn-g{background:linear-gradient(135deg,var(--g),var(--o));color:var(--void);font-weight:700;box-shadow:0 4px 18px rgba(255,215,0,.25)}
+.btn-g:hover{box-shadow:var(--gg);transform:translateY(-1px)}
+.btn-pk{background:linear-gradient(135deg,var(--pk),#aa0044);color:#fff}
+.btn-pk:hover{box-shadow:var(--gpk);transform:translateY(-1px)}
+.btn-sm{padding:.45rem .9rem;font-size:.65rem}
+.btn-lg{padding:.95rem 2.2rem;font-size:.88rem}
+.card{background:var(--card);border:1px solid var(--bd1);border-radius:var(--r16);transition:var(--trm);position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--c),transparent);opacity:0;transition:var(--trm)}
+.card:hover{border-color:var(--bd2);transform:translateY(-2px)}
+.card:hover::before{opacity:1}
+.badge{display:inline-flex;align-items:center;gap:.25rem;padding:.2rem .65rem;border-radius:999px;font-family:var(--fd);font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.bc{background:rgba(0,245,255,.07);color:var(--c);border:1px solid rgba(0,245,255,.25)}
+.bg{background:rgba(255,215,0,.07);color:var(--g);border:1px solid rgba(255,215,0,.25)}
+.bp{background:rgba(191,95,255,.07);color:var(--p);border:1px solid rgba(191,95,255,.25)}
+.bpk{background:rgba(255,45,120,.07);color:var(--pk);border:1px solid rgba(255,45,120,.25)}
+.bgn{background:rgba(57,255,20,.07);color:var(--gn);border:1px solid rgba(57,255,20,.25)}
+.inp{background:var(--elevated);border:1px solid var(--bd1);border-radius:var(--r8);padding:.72rem 1rem;color:var(--t1);font-family:var(--fb);font-size:1rem;width:100%;outline:none;transition:var(--tr)}
+.inp:focus{border-color:var(--c);box-shadow:0 0 0 3px rgba(0,245,255,.08)}
+.inp::placeholder{color:var(--t3)}
+.xb{width:100%;display:flex;flex-direction:column;gap:.28rem}
+.xb-lbl{display:flex;justify-content:space-between;font-size:.7rem;color:var(--t2);font-family:var(--fd)}
+.xb-track{width:100%;height:7px;background:var(--elevated);border-radius:4px;overflow:hidden}
+.xb-fill{height:100%;background:linear-gradient(90deg,var(--c),var(--p));border-radius:4px;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+.gtext{background:linear-gradient(135deg,var(--c),var(--p));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.gtextg{background:linear-gradient(135deg,var(--g),var(--o));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nc{color:var(--c);text-shadow:0 0 10px var(--c)}
+.np{color:var(--p);text-shadow:0 0 10px var(--p)}
+.ng{color:var(--g);text-shadow:0 0 10px rgba(255,215,0,.7)}
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease}
+.reveal.vis{opacity:1;transform:translateY(0)}
+.float{animation:floatY 6s ease-in-out infinite}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+
+/* ═══════════════════════════════
+   LANDING PAGE
+═══════════════════════════════ */
+#landing{padding-top:62px}
+
+/* hero */
+.hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 70% at 60% 45%,rgba(0,245,255,.05) 0,transparent 70%),radial-gradient(ellipse 50% 70% at 15% 85%,rgba(191,95,255,.05) 0,transparent 70%);z-index:0}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,245,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,.028) 1px,transparent 1px);background-size:55px 55px;z-index:0}
+.hero-content{position:relative;z-index:2;max-width:660px}
+.hero-eye{display:inline-flex;align-items:center;gap:.45rem;padding:.35rem .9rem;background:rgba(0,245,255,.04);border:1px solid var(--bd2);border-radius:999px;font-family:var(--fc);font-size:.72rem;color:var(--c);letter-spacing:.1em;margin-bottom:1.4rem}
+.hero-eye-dot{width:6px;height:6px;background:var(--gn);border-radius:50%;animation:dotPulse 2s ease infinite}
+@keyframes dotPulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(57,255,20,.5)}50%{box-shadow:0 0 0 6px rgba(57,255,20,0)}}
+.hero-h{font-size:clamp(2.8rem,6.5vw,5.2rem);font-weight:900;line-height:1.04;letter-spacing:-.02em;margin-bottom:.4rem}
+.hero-h span{display:block}
+.hero-sub{font-size:1.12rem;color:var(--t2);line-height:1.7;margin-bottom:2.2rem;max-width:540px}
+.hero-sub em{font-style:normal;color:var(--c);font-weight:600}
+.hero-cta{display:flex;gap:.85rem;flex-wrap:wrap;margin-bottom:2.8rem}
+.hero-stats{display:flex;gap:2.2rem}
+.hs-val{font-family:var(--fd);font-size:1.7rem;font-weight:900;color:var(--c);display:block}
+.hs-lbl{font-size:.75rem;color:var(--t3)}
+
+/* hero visual */
+.hero-vis{position:absolute;right:-4%;top:50%;transform:translateY(-50%);width:46%;max-width:600px;pointer-events:none;z-index:1}
+.h-scene{position:relative;width:100%;aspect-ratio:1}
+.orbit{position:absolute;border-radius:50%;border:1px solid;top:50%;left:50%}
+.o1{width:88%;aspect-ratio:1;transform:translate(-50%,-50%);border-color:rgba(0,245,255,.12);animation:orb 16s linear infinite}
+.o2{width:66%;aspect-ratio:1;transform:translate(-50%,-50%);border-color:rgba(191,95,255,.12);animation:orb 11s linear infinite reverse}
+.o3{width:44%;aspect-ratio:1;transform:translate(-50%,-50%);border-color:rgba(255,45,120,.1);animation:orb 8s linear infinite}
+@keyframes orb{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+.odot{position:absolute;width:9px;height:9px;border-radius:50%;top:0;left:50%;transform:translateX(-50%)}
+.od1{background:var(--c);box-shadow:var(--gc)}
+.od2{background:var(--p);box-shadow:var(--gp)}
+.od3{background:var(--pk);box-shadow:var(--gpk)}
+.hero-char{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:clamp(4rem,9vw,7rem);animation:floatY 6s ease-in-out infinite;filter:drop-shadow(0 0 30px rgba(0,245,255,.4))}
+.cf{position:absolute;background:var(--card);border:1px solid var(--bd1);border-radius:var(--r8);padding:.42rem .7rem;font-family:var(--fc);font-size:.68rem;white-space:nowrap;box-shadow:0 4px 18px rgba(0,0,0,.4)}
+.cf1{top:15%;left:2%;color:var(--gn);--fd:5s;animation:floatY 5s ease-in-out infinite}
+.cf2{top:22%;right:2%;color:var(--c);animation:floatY 6.5s ease-in-out infinite 1s}
+.cf3{bottom:28%;left:0%;color:var(--p);animation:floatY 5.5s ease-in-out infinite 2s}
+.cf4{bottom:22%;right:5%;color:var(--g);animation:floatY 7s ease-in-out infinite .5s}
+
+/* worlds grid */
+.sec{padding:6rem 0;position:relative}
+.sec-tag{display:block;font-family:var(--fc);font-size:.72rem;color:var(--c);letter-spacing:.22em;text-transform:uppercase;margin-bottom:.65rem;text-align:center}
+.sec-h{text-align:center;font-size:clamp(1.6rem,3vw,2.4rem)}
+.sec-sub{text-align:center;color:var(--t2);font-size:.98rem;margin:.65rem auto 0;max-width:480px;line-height:1.65}
+.worlds-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-top:3rem}
+.wcard{padding:1.75rem 1.5rem;cursor:pointer;transition:all .3s ease}
+.wcard:hover{transform:translateY(-7px);box-shadow:0 14px 40px rgba(0,0,0,.4),0 0 0 1px var(--wc,var(--c));border-color:var(--wc,var(--c))!important}
+.w-icon{font-size:2.3rem;display:block;margin-bottom:.9rem}
+.w-name{font-family:var(--fd);font-size:.95rem;font-weight:700;letter-spacing:.05em;margin-bottom:.35rem}
+.w-tag{display:inline-block;font-family:var(--fc);font-size:.62rem;padding:.18rem .55rem;border-radius:3px;margin-bottom:.7rem}
+.w-desc{font-size:.86rem;color:var(--t2);line-height:1.55;margin-bottom:.85rem}
+.w-meta{display:flex;justify-content:space-between;font-family:var(--fc);font-size:.68rem;color:var(--t3)}
+.w-lock{position:absolute;top:.85rem;right:.85rem;font-size:1.1rem;opacity:.4}
+
+/* features */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-top:2.5rem}
+.fcard{padding:1.85rem;transition:all .3s}
+.fcard:hover{transform:translateY(-4px);border-color:var(--bd2)}
+.f-ico{width:50px;height:50px;border-radius:var(--r8);display:flex;align-items:center;justify-content:center;font-size:1.35rem;margin-bottom:1.1rem}
+.fic{background:rgba(0,245,255,.08)}
+.fip{background:rgba(191,95,255,.08)}
+.fipk{background:rgba(255,45,120,.08)}
+.fig{background:rgba(255,215,0,.08)}
+.fign{background:rgba(57,255,20,.08)}
+.fio{background:rgba(255,107,0,.08)}
+.f-title{font-family:var(--fd);font-size:.87rem;font-weight:700;letter-spacing:.04em;margin-bottom:.4rem}
+.f-desc{font-size:.87rem;color:var(--t2);line-height:1.6}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:2.8rem;position:relative}
+.steps::before{content:'';position:absolute;top:27px;left:10%;width:80%;height:2px;background:linear-gradient(90deg,var(--c),var(--p),var(--pk),var(--g))}
+.step{display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 .85rem;position:relative;z-index:1}
+.step-num{width:54px;height:54px;border-radius:50%;background:var(--card);border:2px solid var(--bd2);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:1.05rem;font-weight:900;margin-bottom:1.1rem}
+.step:nth-child(1) .step-num{color:var(--c);border-color:rgba(0,245,255,.4)}
+.step:nth-child(2) .step-num{color:var(--p);border-color:rgba(191,95,255,.4)}
+.step:nth-child(3) .step-num{color:var(--pk);border-color:rgba(255,45,120,.4)}
+.step:nth-child(4) .step-num{color:var(--g);border-color:rgba(255,215,0,.4)}
+.step-t{font-family:var(--fd);font-size:.82rem;font-weight:700;margin-bottom:.4rem}
+.step-d{font-size:.83rem;color:var(--t2);line-height:1.55}
+
+/* cta */
+.cta-sec{padding:7rem 0;text-align:center;position:relative;overflow:hidden}
+.cta-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:300px;background:radial-gradient(ellipse,rgba(0,245,255,.07) 0,transparent 70%);pointer-events:none}
+
+/* ═══════════════════════════════
+   AUTH
+═══════════════════════════════ */
+#auth{display:none}
+#auth.active{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+.auth-vis{position:relative;background:var(--deep);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:2.5rem}
+.auth-vis-bg{position:absolute;inset:0;background:radial-gradient(ellipse 100% 80% at 30% 50%,rgba(0,245,255,.07) 0,transparent 65%),radial-gradient(ellipse 60% 60% at 70% 80%,rgba(191,95,255,.05) 0,transparent 65%)}
+.auth-vis-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,245,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,.03) 1px,transparent 1px);background-size:38px 38px}
+.auth-vc{position:relative;z-index:1;text-align:center;max-width:400px}
+.auth-hero-char{font-size:4.5rem;display:block;margin-bottom:.85rem;animation:floatY 6s ease-in-out infinite;filter:drop-shadow(0 0 25px rgba(0,245,255,.4))}
+.auth-vc h2{font-size:1.7rem;margin-bottom:.6rem}
+.auth-vc p{color:var(--t2);font-size:.9rem;line-height:1.6;margin-bottom:2rem}
+.wmini{display:flex;flex-direction:column;gap:.6rem;width:100%}
+.wmini-card{background:var(--card);border:1px solid var(--bd1);border-radius:var(--r8);padding:.65rem .9rem;display:flex;align-items:center;gap:.65rem;transition:var(--trm)}
+.wmini-card:hover{border-color:var(--bd2);transform:translateX(3px)}
+.wmi{font-size:1.15rem;flex-shrink:0}
+.wm-xp{margin-left:auto;font-family:var(--fc);font-size:.68rem;color:var(--g)}
+.wm-name{font-family:var(--fd);font-size:.72rem;font-weight:700}
+.wm-info{font-size:.68rem;color:var(--t3)}
+.auth-fp{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.5rem 2rem;background:var(--void);overflow-y:auto}
+.auth-fi{width:100%;max-width:400px}
+.auth-logo-link{display:flex;align-items:center;gap:.65rem;font-family:var(--fd);font-size:1.05rem;font-weight:900;letter-spacing:.1em;color:var(--t1);margin-bottom:2.2rem;cursor:pointer}
+.auth-logo-ico{width:38px;height:38px;background:linear-gradient(135deg,var(--c),var(--p));border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;box-shadow:var(--gc)}
+.auth-tabs{display:flex;background:var(--elevated);border-radius:var(--r8);padding:3px;margin-bottom:1.8rem;border:1px solid var(--bd1)}
+.atab{flex:1;text-align:center;padding:.55rem;border-radius:calc(var(--r8) - 1px);font-family:var(--fd);font-size:.7rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:var(--tr);color:var(--t3);border:none;background:transparent}
+.atab.active{background:var(--card);color:var(--c);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.aform{display:flex;flex-direction:column;gap:1.1rem}
+.aform.hidden{display:none}
+.ig{display:flex;flex-direction:column;gap:.35rem}
+.ig label{font-family:var(--fd);font-size:.66rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--t2)}
+.iico{position:relative}
+.iico .inp{padding-left:2.6rem}
+.iico-sym{position:absolute;left:.85rem;top:50%;transform:translateY(-50%);font-size:.95rem;color:var(--t3);pointer-events:none}
+.cls-sel{display:grid;grid-template-columns:repeat(3,1fr);gap:.45rem}
+.cls-opt{background:var(--elevated);border:1px solid var(--bd1);border-radius:var(--r8);padding:.65rem .4rem;text-align:center;cursor:pointer;transition:var(--tr)}
+.cls-opt:hover{border-color:var(--bd2)}
+.cls-opt.sel{border-color:var(--c);background:rgba(0,245,255,.04)}
+.cls-opt-ico{font-size:1.4rem;display:block;margin-bottom:.2rem}
+.cls-opt-n{font-family:var(--fd);font-size:.58rem;font-weight:700;color:var(--t2)}
+.cls-opt.sel .cls-opt-n{color:var(--c)}
+.pw-bars{display:flex;gap:3px;margin-top:.3rem}
+.pwb{flex:1;height:3px;background:var(--elevated);border-radius:2px;transition:var(--tr)}
+.pwb.w{background:var(--pk)}
+.pwb.m{background:var(--o)}
+.pwb.s{background:var(--gn)}
+.divider{display:flex;align-items:center;gap:.85rem;color:var(--t3);font-size:.78rem}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--bd1)}
+.btn-gg{width:100%;background:var(--elevated);border:1px solid var(--bd1);color:var(--t1);font-family:var(--fb);font-size:.92rem;letter-spacing:0;text-transform:none;padding:.75rem;border-radius:var(--r8);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.7rem;transition:var(--tr)}
+.btn-gg:hover{border-color:var(--bd2);background:var(--hover)}
+.auth-sw{text-align:center;margin-top:1.3rem;font-size:.88rem;color:var(--t2)}
+.auth-sw a{color:var(--c);font-weight:600;cursor:pointer}
+.ferr{background:rgba(255,45,120,.07);border:1px solid rgba(255,45,120,.25);border-radius:var(--r8);padding:.7rem .95rem;color:var(--pk);font-size:.83rem;display:none}
+.ferr.show{display:block}
+
+/* ═══════════════════════════════
+   DASHBOARD
+═══════════════════════════════ */
+#dashboard{display:none}
+#dashboard.active{display:grid;grid-template-columns:264px 1fr;min-height:100vh;padding-top:62px}
+.sidebar{background:var(--deep);border-right:1px solid var(--bd1);padding:1.3rem .85rem;position:sticky;top:62px;height:calc(100vh - 62px);overflow-y:auto;display:flex;flex-direction:column;gap:.35rem}
+.sb-lbl{font-family:var(--fc);font-size:.62rem;letter-spacing:.2em;color:var(--t3);text-transform:uppercase;padding:.45rem .65rem;margin-top:.4rem}
+.sb-item{display:flex;align-items:center;gap:.65rem;padding:.6rem .7rem;border-radius:var(--r8);cursor:pointer;transition:var(--tr);font-family:var(--fd);font-size:.72rem;font-weight:600;letter-spacing:.05em;color:var(--t2);text-decoration:none;border:none;background:none;width:100%;text-align:left}
+.sb-item:hover{background:var(--elevated);color:var(--t1)}
+.sb-item.active{background:rgba(0,245,255,.06);color:var(--c);border:1px solid rgba(0,245,255,.12)}
+.sb-ico{font-size:.95rem;flex-shrink:0}
+.sb-badge{margin-left:auto;background:rgba(255,45,120,.15);color:var(--pk);border:1px solid rgba(255,45,120,.25);border-radius:999px;font-size:.58rem;padding:.08rem .38rem;font-family:var(--fd);font-weight:700}
+.sb-sep{flex:1}
+.main{padding:1.8rem;overflow-y:auto}
+
+/* char banner */
+.char-banner{background:var(--card);border:1px solid var(--bd1);border-radius:var(--r24);padding:1.8rem;display:grid;grid-template-columns:auto 1fr auto;gap:1.75rem;align-items:center;margin-bottom:1.75rem;position:relative;overflow:hidden}
+.char-banner::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--c),var(--p),var(--pk))}
+.cbanner-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 100% at 8% 50%,rgba(0,245,255,.03) 0,transparent 55%);pointer-events:none}
+.char-av{width:88px;height:88px;border-radius:50%;background:radial-gradient(circle,rgba(0,245,255,.12) 0,var(--elevated) 70%);border:2px solid var(--bd2);display:flex;align-items:center;justify-content:center;font-size:2.7rem;position:relative;flex-shrink:0}
+.char-lv{position:absolute;bottom:-4px;right:-4px;background:var(--g);color:var(--void);width:27px;height:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:.68rem;font-weight:900;border:2px solid var(--card);box-shadow:var(--gg)}
+.char-info{position:relative;z-index:1}
+.char-name{font-family:var(--fd);font-size:1.35rem;font-weight:900;letter-spacing:.05em;margin-bottom:.2rem}
+.char-cls{font-family:var(--fc);font-size:.72rem;color:var(--c);margin-bottom:.7rem}
+.char-tags{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.85rem}
+.char-stats-r{position:relative;z-index:1;display:flex;flex-direction:column;gap:.7rem;align-items:flex-end}
+.csr{text-align:right}
+.csr-val{font-family:var(--fd);font-size:1.25rem;font-weight:900;display:block}
+.csr-lbl{font-size:.68rem;color:var(--t3);font-family:var(--fc)}
+
+/* dash grid */
+.dash-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:1.25rem}
+.dash-grid-wide{display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:1.25rem}
+.panel{background:var(--card);border:1px solid var(--bd1);border-radius:var(--r16);padding:1.4rem}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem}
+.pt{font-family:var(--fd);font-size:.8rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.pa{font-size:.72rem;color:var(--c);cursor:pointer;font-family:var(--fd);font-weight:600}
+.qsc{background:var(--card);border:1px solid var(--bd1);border-radius:var(--r16);padding:1.1rem;display:flex;align-items:center;gap:.9rem;transition:var(--tr)}
+.qsc:hover{border-color:var(--bd2);transform:translateY(-2px)}
+.qsc-ico{width:42px;height:42px;border-radius:var(--r8);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.qsc-val{font-family:var(--fd);font-size:1.4rem;font-weight:900;display:block}
+.qsc-lbl{font-size:.72rem;color:var(--t3);font-family:var(--fc)}
+.daily-q{background:linear-gradient(135deg,rgba(255,215,0,.04),rgba(255,107,0,.04));border:1px solid rgba(255,215,0,.18);border-radius:var(--r16);padding:1.4rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1.3rem}
+.dq-ico{font-size:2.3rem;flex-shrink:0}
+.dq-body{flex:1}
+.dq-tag{font-family:var(--fc);font-size:.62rem;color:var(--g);letter-spacing:.15em;text-transform:uppercase;margin-bottom:.28rem}
+.dq-title{font-family:var(--fd);font-size:.97rem;font-weight:700;color:var(--t1);margin-bottom:.22rem}
+.dq-desc{font-size:.83rem;color:var(--t2)}
+.dq-timer{text-align:right;flex-shrink:0}
+.dq-tv{font-family:var(--fd);font-size:1.4rem;font-weight:900;color:var(--g);display:block}
+.dq-tl{font-size:.68rem;color:var(--t3)}
+.aq-card{background:var(--elevated);border:1px solid var(--bd1);border-radius:var(--r8);padding:.9rem;display:flex;align-items:center;gap:.9rem;margin-bottom:.6rem;cursor:pointer;transition:var(--tr);text-decoration:none}
+.aq-card:hover{border-color:var(--bd2);background:var(--hover)}
+.aq-ico{width:40px;height:40px;border-radius:var(--r8);background:rgba(0,245,255,.07);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.aq-nm{font-family:var(--fd);font-size:.78rem;font-weight:700;color:var(--t1);margin-bottom:.2rem}
+.aq-meta{display:flex;align-items:center;gap:.65rem;font-size:.68rem;color:var(--t3);font-family:var(--fc)}
+.aq-qmini{width:100%;height:3px;background:var(--void);border-radius:2px;margin-top:.35rem;overflow:hidden}
+.aq-qfill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--c),var(--p))}
+.aq-xp{font-family:var(--fd);font-size:.72rem;font-weight:700;color:var(--g);flex-shrink:0}
+.lb-item{display:flex;align-items:center;gap:.65rem;padding:.52rem 0;border-bottom:1px solid var(--bd1)}
+.lb-item:last-child{border-bottom:none}
+.lb-rank{font-family:var(--fd);font-size:.72rem;font-weight:700;width:18px;text-align:center;color:var(--t3);flex-shrink:0}
+.lb-rank.r1{color:var(--g);text-shadow:var(--gg)}
+.lb-rank.r2{color:#c0c0c0}
+.lb-rank.r3{color:#cd7f32}
+.lb-av{font-size:1.1rem}
+.lb-nm{font-family:var(--fd);font-size:.72rem;font-weight:700;flex:1}
+.lb-xp{font-family:var(--fc);font-size:.68rem;color:var(--g)}
+.ach-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.42rem}
+.ach-item{background:var(--elevated);border:1px solid var(--bd1);border-radius:var(--r8);padding:.65rem .4rem;text-align:center;cursor:pointer;transition:var(--tr)}
+.ach-item:hover{border-color:var(--bd2);transform:scale(1.06)}
+.ach-item.lk{opacity:.38;filter:grayscale(1)}
+.ach-em{font-size:1.55rem;display:block;margin-bottom:.2rem}
+.ach-nm{font-family:var(--fd);font-size:.52rem;font-weight:700;color:var(--t2)}
+.streak-row{display:flex;gap:.35rem;flex-wrap:wrap}
+.sd{width:27px;height:27px;border-radius:3px;border:1px solid var(--bd1);display:flex;align-items:center;justify-content:center;font-size:.62rem;font-family:var(--fc);color:var(--t3)}
+.sd.done{background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.35);color:var(--g)}
+.sd.today{background:rgba(0,245,255,.08);border-color:var(--c);color:var(--c)}
+.wp-item{display:flex;align-items:center;gap:.9rem;margin-bottom:.85rem}
+.wp-ico{font-size:1.25rem;flex-shrink:0}
+.wp-info{flex:1}
+.wp-nm{font-family:var(--fd);font-size:.72rem;font-weight:700;margin-bottom:.22rem}
+.wp-bt{width:100%;height:4px;background:var(--elevated);border-radius:2px;overflow:hidden}
+.wp-bf{height:100%;border-radius:2px}
+.wp-pct{font-family:var(--fc);font-size:.68rem;color:var(--t3);flex-shrink:0;min-width:32px;text-align:right}
+
+/* ═══════════════════════════════
+   WORLD MAP
+═══════════════════════════════ */
+#worldmap{display:none}
+#worldmap.active{display:block;padding-top:62px}
+.wm-hero{background:var(--deep);border-bottom:1px solid var(--bd1);padding:2.8rem 0;text-align:center;position:relative;overflow:hidden}
+.wm-hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 100% at 50% 100%,rgba(0,245,255,.045) 0,transparent 65%)}
+.world-path{max-width:860px;margin:3.5rem auto;padding:0 1.5rem;position:relative}
+.wpath-line{position:absolute;left:50%;top:80px;bottom:80px;width:2px;background:linear-gradient(180deg,var(--gn),var(--g),var(--o),var(--pk),#8b0000,var(--p));transform:translateX(-50%);opacity:.28}
+.wnode{display:grid;grid-template-columns:1fr auto 1fr;gap:1.75rem;align-items:center;margin-bottom:3.5rem;position:relative}
+.wnode.nr .wnc-card{grid-column:3;grid-row:1}
+.wnode.nr .wnc-center{grid-column:2}
+.wnode.nr .wnc-empty{grid-column:1}
+.wnc-center{display:flex;flex-direction:column;align-items:center;gap:.45rem;position:relative;z-index:2}
+.wn-ico{width:76px;height:76px;border-radius:50%;border:2px solid var(--bd2);background:var(--card);display:flex;align-items:center;justify-content:center;font-size:1.9rem;transition:var(--trm);cursor:pointer;box-shadow:0 0 0 4px rgba(0,0,0,.3)}
+.wn-ico.unlocked{border-color:var(--wic,var(--c));box-shadow:0 0 0 4px rgba(0,0,0,.3),0 0 25px var(--wig,rgba(0,245,255,.3))}
+.wn-ico.unlocked:hover{transform:scale(1.1)}
+.wn-ico.locked{opacity:.38;filter:grayscale(1);cursor:not-allowed}
+.wn-lbl{font-family:var(--fc);font-size:.62rem;color:var(--t3);text-align:center;letter-spacing:.1em}
+.wnc-card{background:var(--card);border:1px solid var(--bd1);border-radius:var(--r24);padding:1.65rem;transition:all .3s}
+.wnc-card.unl:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.4),0 0 0 1px var(--wbc,var(--c))}
+.wnc-card.lkd{opacity:.58;filter:grayscale(.4)}
+.wct{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.85rem}
+.wci{font-size:1.7rem}
+.wck{width:30px;height:30px;background:var(--elevated);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:.88rem;color:var(--t3)}
+.wc-title{font-family:var(--fd);font-size:.97rem;font-weight:900;letter-spacing:.04em;margin-bottom:.22rem}
+.wc-lt{display:inline-block;font-family:var(--fc);font-size:.62rem;padding:.18rem .5rem;border-radius:3px;margin-bottom:.7rem}
+.wc-desc{font-size:.84rem;color:var(--t2);line-height:1.52;margin-bottom:1.1rem}
+.wc-stats{display:flex;gap:.85rem;margin-bottom:1.1rem}
+.wcs{text-align:center}
+.wcsv{font-family:var(--fd);font-size:.97rem;font-weight:700;display:block}
+.wcsl{font-size:.62rem;color:var(--t3);font-family:var(--fc)}
+.wc-prog{margin-bottom:.95rem}
+.wc-ptop{display:flex;justify-content:space-between;font-size:.68rem;color:var(--t3);font-family:var(--fc);margin-bottom:.28rem}
+.quest-mini-list{display:flex;flex-direction:column;gap:.35rem;margin-bottom:1.1rem}
+.qmi{display:flex;align-items:center;gap:.45rem;font-size:.78rem;color:var(--t2)}
+.qdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.qd-done{background:var(--gn)}
+.qd-active{background:var(--c)}
+.qd-todo{background:var(--elevated);border:1px solid var(--bd1)}
+.boss-bar{background:rgba(255,45,120,.04);border:1px solid rgba(255,45,120,.18);border-radius:var(--r8);padding:.65rem;display:flex;align-items:center;gap:.65rem;margin-top:.4rem}
+.boss-ico{font-size:1.2rem}
+.boss-nm{font-family:var(--fd);font-size:.72rem;font-weight:700;color:var(--pk)}
+.boss-info{font-size:.68rem;color:var(--t3)}
+
+/* ═══════════════════════════════
+   QUEST PAGE
+═══════════════════════════════ */
+#quest{display:none}
+#quest.active{display:grid;grid-template-columns:370px 1fr;height:100vh;padding-top:62px;overflow:hidden}
+.qstory{background:var(--deep);border-right:1px solid var(--bd1);display:flex;flex-direction:column;overflow:hidden}
+.qhdr{padding:1.1rem 1.35rem;border-bottom:1px solid var(--bd1);background:var(--card);flex-shrink:0}
+.qbc{font-family:var(--fc);font-size:.62rem;color:var(--t3);letter-spacing:.1em;margin-bottom:.42rem}
+.qbc span{color:var(--c)}
+.qtitle{font-family:var(--fd);font-size:.97rem;font-weight:900;letter-spacing:.04em;line-height:1.3}
+.qmeta{display:flex;gap:.42rem;margin-top:.55rem;flex-wrap:wrap}
+.qscroll{flex:1;overflow-y:auto;padding:1.35rem}
+.story-blk{background:var(--elevated);border:1px solid var(--bd1);border-left:3px solid var(--c);border-radius:var(--r8);padding:.9rem 1.1rem;margin-bottom:1.1rem;font-size:.88rem;color:var(--t2);line-height:1.68;font-style:italic}
+.s-spk{font-family:var(--fd);font-size:.6rem;font-weight:700;letter-spacing:.1em;color:var(--c);text-transform:uppercase;display:block;margin-bottom:.35rem;font-style:normal}
+.q-sec-t{font-family:var(--fd);font-size:.66rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--t3);margin:1.1rem 0 .65rem;display:flex;align-items:center;gap:.45rem}
+.q-sec-t::after{content:'';flex:1;height:1px;background:var(--bd1)}
+.concept{background:var(--card);border:1px solid var(--bd1);border-radius:var(--r8);padding:.9rem;margin-bottom:.9rem;font-size:.84rem;color:var(--t2);line-height:1.68}
+.concept p{color:var(--t2);font-size:.84rem}
+.code-ex{background:var(--void);border:1px solid var(--bd1);border-radius:var(--r8);overflow:hidden;margin-bottom:.9rem}
+.ce-hdr{background:var(--elevated);padding:.38rem .9rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd1)}
+.ce-lang{font-family:var(--fc);font-size:.62rem;color:var(--gn)}
+.ce-pre{padding:.9rem;font-family:var(--fc);font-size:.78rem;line-height:1.62;overflow-x:auto;color:var(--t2)}
+.ce-kw{color:var(--p)}
+.ce-str{color:var(--g)}
+.ce-fn{color:var(--c)}
+.ce-cm{color:var(--t3)}
+.task-list{list-style:none;display:flex;flex-direction:column;gap:.42rem}
+.task-item{display:flex;align-items:flex-start;gap:.55rem;font-size:.84rem;color:var(--t2);line-height:1.5;padding:.45rem;border-radius:3px;background:var(--elevated)}
+.t-num{font-family:var(--fd);font-size:.62rem;font-weight:700;color:var(--c);flex-shrink:0;margin-top:.08rem}
+.hint-box{background:rgba(255,215,0,.04);border:1px solid rgba(255,215,0,.18);border-radius:var(--r8);padding:.85rem;margin-top:.7rem;font-size:.83rem;color:var(--t2);display:none}
+
+/* editor panel */
+.qeditor{display:flex;flex-direction:column;overflow:hidden;background:var(--void)}
+.etoolbar{background:var(--card);border-bottom:1px solid var(--bd1);padding:.65rem .9rem;display:flex;align-items:center;gap:.85rem;flex-shrink:0}
+.elang{font-family:var(--fc);font-size:.68rem;color:var(--gn);background:rgba(57,255,20,.07);border:1px solid rgba(57,255,20,.18);padding:.22rem .55rem;border-radius:3px}
+.etimer{font-family:var(--fd);font-size:.78rem;font-weight:700;color:var(--pk)}
+.esp{flex:1}
+#monacoEditor{flex:1;min-height:0}
+
+/* output */
+.outpanel{background:var(--deep);border-top:1px solid var(--bd1);height:210px;display:flex;flex-direction:column;flex-shrink:0}
+.out-tabs{display:flex;border-bottom:1px solid var(--bd1);background:var(--card)}
+.otab{padding:.45rem .9rem;font-family:var(--fd);font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;color:var(--t3);border-bottom:2px solid transparent;transition:var(--tr);background:none;border-top:none;border-left:none;border-right:none}
+.otab.active{color:var(--c);border-bottom-color:var(--c)}
+.out-content{flex:1;overflow:auto;padding:.65rem .9rem;font-family:var(--fc);font-size:.78rem;line-height:1.58}
+.ol{margin-bottom:.2rem}.ol.ok{color:var(--gn)}.ol.er{color:var(--pk)}.ol.inf{color:var(--c)}.ol.mut{color:var(--t3)}
+.tc{background:var(--card);border:1px solid var(--bd1);border-radius:3px;padding:.45rem .65rem;margin-bottom:.35rem;display:flex;align-items:center;gap:.65rem;font-family:var(--fc);font-size:.72rem}
+.tc-st{font-size:.88rem;flex-shrink:0}
+.tc-nm{color:var(--t2);flex:1}
+.tc-res{color:var(--t3)}
+
+/* success modal */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:8000;display:flex;align-items:center;justify-content:center}
+.modal-ov.hidden{display:none}
+.modal-box{background:var(--card);border:1px solid var(--bd2);border-radius:var(--r24);padding:2.8rem;text-align:center;max-width:400px;width:90%;position:relative;animation:mbIn .55s cubic-bezier(.36,.07,.19,.97) both}
+.modal-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--c),var(--p),var(--pk));border-radius:var(--r24) var(--r24) 0 0}
+@keyframes mbIn{0%{opacity:0;transform:scale(.4)}100%{opacity:1;transform:scale(1)}}
+.modal-em{font-size:3.5rem;display:block;margin-bottom:.85rem;animation:floatY 3s ease infinite}
+.modal-xp-amt{font-family:var(--fd);font-size:1.9rem;font-weight:900;color:var(--g);text-shadow:var(--gg);margin:.65rem 0}
+.modal-acts{display:flex;gap:.85rem;justify-content:center;margin-top:1.35rem}
+
+/* ═══════════════════════════════
+   PROFILE
+═══════════════════════════════ */
+#profile{display:none}
+#profile.active{display:block;padding-top:62px}
+.profile-hero{background:var(--deep);border-bottom:1px solid var(--bd1);padding:3rem 0;position:relative;overflow:hidden}
+.ph-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 100% at 20% 60%,rgba(0,245,255,.06) 0,transparent 65%)}
+.profile-inner{display:flex;align-items:center;gap:2rem;position:relative;z-index:1}
+.profile-av{width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,rgba(0,245,255,.14) 0,var(--elevated) 70%);border:2px solid var(--bd2);display:flex;align-items:center;justify-content:center;font-size:3.2rem;flex-shrink:0;position:relative}
+.profile-lv{position:absolute;bottom:-5px;right:-5px;background:var(--g);color:var(--void);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:.78rem;font-weight:900;border:2px solid var(--deep);box-shadow:var(--gg)}
+.profile-info{}
+.profile-name{font-family:var(--fd);font-size:1.85rem;font-weight:900;margin-bottom:.22rem}
+.profile-cls{font-family:var(--fc);font-size:.78rem;color:var(--c);margin-bottom:.75rem}
+.profile-tags{display:flex;gap:.45rem;flex-wrap:wrap;margin-bottom:1rem}
+.profile-stats-row{display:flex;gap:2.2rem;margin-top:.5rem}
+.psr{text-align:center}
+.psr-val{font-family:var(--fd);font-size:1.5rem;font-weight:900;display:block}
+.psr-lbl{font-size:.7rem;color:var(--t3);font-family:var(--fc)}
+.profile-body{padding:2.5rem 0}
+.profile-grid{display:grid;grid-template-columns:1fr 2fr;gap:1.5rem}
+.ach-full-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.75rem;margin-top:.75rem}
+.ach-full-item{background:var(--elevated);border:1px solid var(--bd1);border-radius:var(--r8);padding:1.1rem .75rem;text-align:center;cursor:pointer;transition:var(--tr);position:relative}
+.ach-full-item:hover{border-color:var(--bd2);transform:scale(1.04)}
+.ach-full-item.lk{opacity:.35;filter:grayscale(1)}
+.ach-full-em{font-size:2rem;display:block;margin-bottom:.35rem}
+.ach-full-nm{font-family:var(--fd);font-size:.62rem;font-weight:700;color:var(--t2);display:block;margin-bottom:.18rem}
+.ach-full-desc{font-size:.6rem;color:var(--t3)}
+
+/* ═══════════════════════════════
+   LEADERBOARD
+═══════════════════════════════ */
+#leaderboard{display:none}
+#leaderboard.active{display:block;padding-top:62px}
+.lb-hero{background:var(--deep);border-bottom:1px solid var(--bd1);padding:2.8rem 0;text-align:center;position:relative;overflow:hidden}
+.lb-hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 100% at 50% 100%,rgba(191,95,255,.05) 0,transparent 65%)}
+.lb-tabs{display:flex;justify-content:center;gap:1rem;margin-top:1.5rem;position:relative;z-index:1}
+.lb-tab{padding:.55rem 1.4rem;border-radius:999px;font-family:var(--fd);font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:var(--tr);color:var(--t2);border:1px solid var(--bd1);background:transparent}
+.lb-tab.active{background:rgba(191,95,255,.1);color:var(--p);border-color:rgba(191,95,255,.3)}
+.lb-body{max-width:720px;margin:3rem auto;padding:0 1.5rem}
+.lb-podium{display:flex;align-items:flex-end;justify-content:center;gap:1.25rem;margin-bottom:2.5rem}
+.pod-item{display:flex;flex-direction:column;align-items:center;gap:.55rem}
+.pod-av{border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-size:1.7rem;position:relative;background:var(--card)}
+.pod-1 .pod-av{width:82px;height:82px;border-color:var(--g);box-shadow:var(--gg)}
+.pod-2 .pod-av{width:66px;height:66px;border-color:#c0c0c0}
+.pod-3 .pod-av{width:60px;height:60px;border-color:#cd7f32}
+.pod-crown{position:absolute;top:-18px;font-size:1.2rem}
+.pod-pos{font-family:var(--fd);font-size:.72rem;font-weight:900}
+.pod-1 .pod-pos{color:var(--g)}
+.pod-2 .pod-pos{color:#c0c0c0}
+.pod-3 .pod-pos{color:#cd7f32}
+.pod-name{font-family:var(--fd);font-size:.75rem;font-weight:700}
+.pod-xp{font-family:var(--fc);font-size:.68rem;color:var(--t3)}
+.pod-base{border-radius:var(--r8) var(--r8) 0 0}
+.pod-1 .pod-base{background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.2);height:90px;width:100px}
+.pod-2 .pod-base{background:rgba(192,192,192,.08);border:1px solid rgba(192,192,192,.18);height:70px;width:80px}
+.pod-3 .pod-base{background:rgba(205,127,50,.08);border:1px solid rgba(205,127,50,.18);height:55px;width:75px}
+.lb-list{display:flex;flex-direction:column;gap:.55rem}
+.lb-row{background:var(--card);border:1px solid var(--bd1);border-radius:var(--r8);padding:.85rem 1.1rem;display:flex;align-items:center;gap:.9rem;transition:var(--tr)}
+.lb-row:hover{border-color:var(--bd2);transform:translateX(3px)}
+.lb-row.me{background:rgba(0,245,255,.03);border-color:rgba(0,245,255,.2)}
+.lbr-rank{font-family:var(--fd);font-size:.85rem;font-weight:900;width:30px;text-align:center;flex-shrink:0;color:var(--t2)}
+.lbr-av{font-size:1.3rem}
+.lbr-info{flex:1}
+.lbr-nm{font-family:var(--fd);font-size:.82rem;font-weight:700}
+.lbr-cls{font-size:.7rem;color:var(--t3);font-family:var(--fc)}
+.lbr-xp{font-family:var(--fd);font-size:.88rem;font-weight:700;color:var(--g)}
+.lbr-badges{display:flex;gap:.25rem}
+
+/* responsive */
+@media(max-width:1024px){
+  #auth.active{grid-template-columns:1fr}
+  .auth-vis{display:none}
+  #dashboard.active{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .worlds-grid,.feat-grid{grid-template-columns:repeat(2,1fr)}
+  .steps{grid-template-columns:repeat(2,1fr)}
+  .steps::before{display:none}
+  #quest.active{grid-template-columns:1fr;grid-template-rows:45vh 1fr}
+  .hero-vis{display:none}
+}
+@media(max-width:640px){
+  .worlds-grid,.feat-grid{grid-template-columns:1fr}
+  .profile-grid{grid-template-columns:1fr}
+  .ach-full-grid{grid-template-columns:repeat(3,1fr)}
+  .dash-grid-wide{grid-template-columns:1fr}
+  .hero-stats{gap:1.5rem}
+  .hero-cta{flex-direction:column}
+  .lb-podium{gap:.75rem}
+}
+</style>
+</head>
+<body>
+
+<!-- PARTICLE CANVAS -->
+<canvas id="bgCanvas"></canvas>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="load-logo" id="loadLogo">CODEXQUEST</div>
+  <div class="load-bar-wrap"><div class="load-bar" id="loadBar"></div></div>
+  <div class="load-txt" id="loadTxt">INITIALIZING REALM...</div>
+</div>
+
+<!-- TOASTS -->
+<div id="toastWrap"></div>
+
+<!-- NAV -->
+<nav id="mainNav" style="display:none">
+  <div class="nav-inner">
+    <div class="nav-logo" onclick="goTo('landing')">
+      <div class="nav-logo-icon">⚔️</div>
+      CODEX<span class="nc">QUEST</span>
+    </div>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#" onclick="goTo('dashboard')" data-page="dashboard">Dashboard</a></li>
+      <li><a href="#" onclick="goTo('worldmap')" data-page="worldmap">World Map</a></li>
+      <li><a href="#" onclick="goTo('leaderboard')" data-page="leaderboard">Leaderboard</a></li>
+      <li><a href="#" onclick="goTo('profile')" data-page="profile">Profile</a></li>
+    </ul>
+    <div class="nav-right">
+      <div class="nav-xp" id="navXp">⭐ 1,250 XP</div>
+      <div class="nav-avatar" onclick="goTo('profile')" id="navAv">🧙‍♂️</div>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     LANDING PAGE
+══════════════════════════════════════════════ -->
+<div id="landing" class="screen active">
+
+  <!-- LANDING NAV (separate from authed nav) -->
+  <nav style="position:fixed;top:0;left:0;right:0;z-index:500;height:62px;background:rgba(3,6,16,.88);backdrop-filter:blur(18px);border-bottom:1px solid var(--bd1);display:flex;align-items:center;padding:0 1.5rem">
+    <div class="nav-inner">
+      <div class="nav-logo">
+        <div class="nav-logo-icon">⚔️</div>
+        CODEX<span class="nc">QUEST</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="#worlds">Worlds</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how">How It Works</a></li>
+      </ul>
+      <div class="nav-right">
+        <button class="btn btn-s btn-sm" onclick="goTo('auth')">Login</button>
+        <button class="btn btn-p btn-sm" onclick="goTo('auth')">Start Quest</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="wrap" style="position:relative;z-index:2">
+      <div class="hero-content" style="animation:staggerIn .6s ease both">
+        <div class="hero-eye">
+          <span class="hero-eye-dot"></span>
+          SEASON 1 — THE CODE CHRONICLES IS LIVE
+        </div>
+        <h1 class="hero-h">
+          CODE YOUR WAY
+          <span class="gtext">TO LEGENDARY</span>
+        </h1>
+        <p class="hero-sub">Enter a world where <em>coding is power</em>. Complete epic quests, defeat coding bosses, level up across 6 anime-inspired worlds — and become a <em>Code Legend</em>.</p>
+        <div class="hero-cta">
+          <button class="btn btn-p btn-lg" onclick="goTo('auth')">⚔️ Begin Your Quest</button>
+          <button class="btn btn-s btn-lg" onclick="scrollTo(0,document.getElementById('worlds').offsetTop-80)">🗺️ Explore Worlds</button>
+        </div>
+        <div class="hero-stats">
+          <div><span class="hs-val" data-count="12400">0</span><span class="hs-lbl">Warriors Enrolled</span></div>
+          <div><span class="hs-val" data-count="480">0</span><span class="hs-lbl">Quests Available</span></div>
+          <div><span class="hs-val" data-count="6">0</span><span class="hs-lbl">Worlds to Conquer</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HERO VISUAL -->
+    <div class="hero-vis">
+      <div class="h-scene">
+        <div class="orbit o1"><div class="odot od1"></div></div>
+        <div class="orbit o2"><div class="odot od2"></div></div>
+        <div class="orbit o3"><div class="odot od3"></div></div>
+        <div class="hero-char">🧙‍♂️</div>
+        <div class="cf cf1">print("Hello, World!")</div>
+        <div class="cf cf2">const power = 9000;</div>
+        <div class="cf cf3">&lt;div class="epic"&gt;</div>
+        <div class="cf cf4">XP += 250 🔥</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WORLDS -->
+  <section class="sec" id="worlds">
+    <div class="wrap">
+      <span class="sec-tag">// EXPLORE</span>
+      <h2 class="sec-h reveal">Choose Your <span class="gtext">World</span></h2>
+      <p class="sec-sub reveal">Six legendary realms await. Each holds unique challenges, secrets, and power.</p>
+      <div class="worlds-grid">
+        <div class="card wcard reveal" style="--wc:#4caf50;padding:1.75rem 1.5rem" onclick="goTo('worldmap')">
+          <span class="w-icon">🌲</span>
+          <div class="w-name">Python Forest</div>
+          <span class="w-tag" style="background:rgba(61,139,55,.12);color:#4caf50">Python</span>
+          <p class="w-desc">Begin in the ancient forest where serpents guard the sacred Python scrolls. Master the basics and claim the Serpent's Crown.</p>
+          <div class="w-meta"><span>⚔️ 12 Quests</span><span>🏆 500 XP</span><span style="color:var(--gn)">✅ Available</span></div>
+        </div>
+        <div class="card wcard reveal" style="--wc:#ffd700;padding:1.75rem 1.5rem" onclick="goTo('worldmap')">
+          <span class="w-lock">🔒</span>
+          <span class="w-icon">🏙️</span>
+          <div class="w-name">JavaScript City</div>
+          <span class="w-tag" style="background:rgba(240,180,41,.12);color:#ffd700">JavaScript</span>
+          <p class="w-desc">A neon megacity that never sleeps. DOM manipulation, async spells, event magic — control the city's pulse.</p>
+          <div class="w-meta"><span>⚔️ 18 Quests</span><span>🏆 700 XP</span><span>🔒 Locked</span></div>
+        </div>
+        <div class="card wcard reveal" style="--wc:#ff6b47;padding:1.75rem 1.5rem" onclick="goTo('worldmap')">
+          <span class="w-lock">🔒</span>
+          <span class="w-icon">🏔️</span>
+          <div class="w-name">HTML Valley</div>
+          <span class="w-tag" style="background:rgba(227,76,38,.12);color:#ff6b47">HTML5</span>
+          <p class="w-desc">The Valley of Structures. Build foundations of the digital world. Every tag is a stone, every page a cathedral.</p>
+          <div class="w-meta"><span>⚔️ 10 Quests</span><span>🏆 400 XP</span><span>🔒 Locked</span></div>
+        </div>
+        <div class="card wcard reveal" style="--wc:#5b7fff;padding:1.75rem 1.5rem" onclick="goTo('worldmap')">
+          <span class="w-lock">🔒</span>
+          <span class="w-icon">👑</span>
+          <div class="w-name">CSS Kingdom</div>
+          <span class="w-tag" style="background:rgba(38,77,228,.12);color:#5b7fff">CSS3</span>
+          <p class="w-desc">A realm of beauty ruled by the Style Witch. Flexbox sorcery, grid enchantments, animation spells.</p>
+          <div class="w-meta"><span>⚔️ 14 Quests</span><span>🏆 600 XP</span><span>🔒 Locked</span></div>
+        </div>
+        <div class="card wcard reveal" style="--wc:#ff4444;padding:1.75rem 1.5rem" onclick="goTo('worldmap')">
+          <span class="w-lock">🔒</span>
+          <span class="w-icon">🏰</span>
+          <div class="w-name">Cybersecurity Dungeon</div>
+          <span class="w-tag" style="background:rgba(139,0,0,.12);color:#ff4444">Security</span>
+          <p class="w-desc">Dark dungeon of digital warfare. Cryptography, ethical hacking, and ancient arts of system defense.</p>
+          <div class="w-meta"><span>⚔️ 20 Quests</span><span>🏆 1200 XP</span><span>🔒 Locked</span></div>
+        </div>
+        <div class="card wcard reveal" style="--wc:#bf5fff;padding:1.75rem 1.5rem" onclick="goTo('worldmap')">
+          <span class="w-lock">🔒</span>
+          <span class="w-icon">🌌</span>
+          <div class="w-name">AI Universe</div>
+          <span class="w-tag" style="background:rgba(123,47,190,.12);color:#bf5fff">Python / ML</span>
+          <p class="w-desc">The final frontier. Neural networks, machine learning, the godlike power of artificial intelligence.</p>
+          <div class="w-meta"><span>⚔️ 25 Quests</span><span>🏆 2000 XP</span><span>🔒 Locked</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="sec" id="features" style="background:linear-gradient(180deg,transparent,rgba(0,245,255,.015),transparent)">
+    <div class="wrap">
+      <span class="sec-tag">// FEATURES</span>
+      <h2 class="sec-h reveal">Why <span class="gtext">CodexQuest</span>?</h2>
+      <div class="feat-grid">
+        <div class="card fcard reveal"><div class="f-ico fic">⚔️</div><div class="f-title">Epic Quest System</div><p class="f-desc">Every lesson is a quest with a story, boss, and XP reward. Learning feels like playing.</p></div>
+        <div class="card fcard reveal"><div class="f-ico fig">⭐</div><div class="f-title">XP & Leveling</div><p class="f-desc">Earn XP, level up your character, unlock exclusive titles, skins, and world access.</p></div>
+        <div class="card fcard reveal"><div class="f-ico fip">🖥️</div><div class="f-title">Monaco Code Editor</div><p class="f-desc">Professional VS Code–grade editor embedded in every quest. Run real code, see real results.</p></div>
+        <div class="card fcard reveal"><div class="f-ico fipk">🏆</div><div class="f-title">Achievement Badges</div><p class="f-desc">Unlock 50+ unique anime-inspired achievement badges. Show them off on your profile.</p></div>
+        <div class="card fcard reveal"><div class="f-ico fign">👥</div><div class="f-title">Global Leaderboard</div><p class="f-desc">Compete with warriors worldwide. Climb ranks, earn prestige, get etched in the Hall of Legends.</p></div>
+        <div class="card fcard reveal"><div class="f-ico fio">🤖</div><div class="f-title">AI Code Sensei</div><p class="f-desc">Stuck? Your AI mentor gives personalized hints without spoiling the solution.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="sec" id="how">
+    <div class="wrap">
+      <span class="sec-tag">// HOW IT WORKS</span>
+      <h2 class="sec-h reveal">Your <span class="gtextg">Journey</span> Begins</h2>
+      <div class="steps">
+        <div class="step reveal"><div class="step-num">01</div><div class="step-t">Create Your Character</div><p class="step-d">Sign up, choose your avatar class, enter your warrior name.</p></div>
+        <div class="step reveal"><div class="step-num">02</div><div class="step-t">Choose a World</div><p class="step-d">Start in Python Forest. Complete quests to unlock new worlds.</p></div>
+        <div class="step reveal"><div class="step-num">03</div><div class="step-t">Complete Quests</div><p class="step-d">Read the story, learn the concept, code the solution, earn rewards.</p></div>
+        <div class="step reveal"><div class="step-num">04</div><div class="step-t">Become Legendary</div><p class="step-d">Defeat bosses, climb the leaderboard, claim your Code Legend title.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-sec">
+    <div class="cta-glow"></div>
+    <div class="wrap" style="position:relative;z-index:1">
+      <h2 style="font-size:clamp(2rem,4vw,3.2rem);margin-bottom:.85rem" class="reveal">Ready to <span class="gtext">Begin</span>?</h2>
+      <p style="color:var(--t2);font-size:1.05rem;margin-bottom:2.2rem;max-width:440px;margin-left:auto;margin-right:auto;line-height:1.65" class="reveal">Thousands of warriors are already training. Join them today — for free.</p>
+      <button class="btn btn-p btn-lg reveal" onclick="goTo('auth')">⚔️ Start Your Free Quest</button>
+      <p style="font-size:.78rem;color:var(--t3);margin-top:.9rem">No credit card. No BS. Just code.</p>
+    </div>
+  </section>
+
+  <footer style="border-top:1px solid var(--bd1);padding:2.2rem 0">
+    <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+      <div>
+        <div class="nav-logo" style="margin-bottom:.4rem">
+          <div class="nav-logo-icon" style="width:28px;height:28px;font-size:.85rem">⚔️</div>
+          CODEX<span class="nc">QUEST</span>
+        </div>
+        <p style="font-size:.76rem;color:var(--t3)">© 2025 CodexQuest. Built for warriors.</p>
+      </div>
+      <div style="display:flex;gap:1.35rem">
+        <a style="font-size:.78rem;color:var(--t3)" href="#">GitHub</a>
+        <a style="font-size:.78rem;color:var(--t3)" href="#">Discord</a>
+        <a style="font-size:.78rem;color:var(--t3)" href="#">Privacy</a>
+      </div>
+    </div>
+  </footer>
+</div><!-- /landing -->
+
+<!-- ══════════════════════════════════════════════
+     AUTH PAGE
+══════════════════════════════════════════════ -->
+<div id="auth" class="screen">
+  <div class="auth-vis">
+    <div class="auth-vis-bg"></div>
+    <div class="auth-vis-grid"></div>
+    <div class="auth-vc">
+      <span class="auth-hero-char">🧙‍♂️</span>
+      <h2 class="gtext" style="font-size:1.65rem;margin-bottom:.55rem">Enter the Realm</h2>
+      <p>Join thousands mastering code through epic quests, legendary battles, and anime-inspired adventures.</p>
+      <div class="wmini">
+        <div class="wmini-card"><span class="wmi">🌲</span><div><div class="wm-name">Python Forest</div><div class="wm-info">12 Quests · Beginner</div></div><span class="wm-xp">+500 XP</span></div>
+        <div class="wmini-card"><span class="wmi">🏙️</span><div><div class="wm-name">JavaScript City</div><div class="wm-info">18 Quests · Intermediate</div></div><span class="wm-xp">+700 XP</span></div>
+        <div class="wmini-card"><span class="wmi">🌌</span><div><div class="wm-name">AI Universe</div><div class="wm-info">25 Quests · Expert</div></div><span class="wm-xp">+2000 XP</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="auth-fp">
+    <div class="auth-fi">
+      <div class="auth-logo-link" onclick="goTo('landing')">
+        <div class="auth-logo-ico">⚔️</div>
+        CODEX<span class="nc">QUEST</span>
+      </div>
+      <div class="auth-tabs">
+        <button class="atab active" id="aTabLogin" onclick="switchAuthTab('login')">Login</button>
+        <button class="atab" id="aTabSignup" onclick="switchAuthTab('signup')">Sign Up</button>
+      </div>
+      <div class="ferr" id="authErr"></div>
+
+      <!-- LOGIN -->
+      <form class="aform" id="loginForm" onsubmit="handleLogin(event)">
+        <div class="ig"><label>Email</label><div class="iico"><span class="iico-sym">📧</span><input class="inp" type="email" id="lEmail" placeholder="warrior@realm.com" required></div></div>
+        <div class="ig"><label>Password</label><div class="iico"><span class="iico-sym">🔑</span><input class="inp" type="password" id="lPass" placeholder="••••••••" required></div></div>
+        <button type="submit" class="btn btn-p" style="width:100%;margin-top:.3rem" id="loginBtn">⚔️ Enter the Realm</button>
+        <div class="divider">or</div>
+        <button type="button" class="btn-gg" onclick="handleGoogleAuth()">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285f4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34a853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fbbc05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#ea4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Continue with Google
+        </button>
+        <div class="auth-sw">Don't have an account? <a onclick="switchAuthTab('signup')">Sign Up Free</a></div>
+      </form>
+
+      <!-- SIGNUP -->
+      <form class="aform hidden" id="signupForm" onsubmit="handleSignup(event)">
+        <div class="ig"><label>Warrior Name</label><div class="iico"><span class="iico-sym">⚔️</span><input class="inp" type="text" id="sName" placeholder="Enter your warrior name" required></div></div>
+        <div class="ig"><label>Email</label><div class="iico"><span class="iico-sym">📧</span><input class="inp" type="email" id="sEmail" placeholder="warrior@realm.com" required></div></div>
+        <div class="ig">
+          <label>Password</label>
+          <div class="iico"><span class="iico-sym">🔑</span><input class="inp" type="password" id="sPass" placeholder="••••••••" required oninput="checkPwStrength(this.value)"></div>
+          <div class="pw-bars"><div class="pwb" id="pb1"></div><div class="pwb" id="pb2"></div><div class="pwb" id="pb3"></div><div class="pwb" id="pb4"></div></div>
+        </div>
+        <div class="ig">
+          <label>Choose Your Class</label>
+          <div class="cls-sel">
+            <div class="cls-opt sel" onclick="selectClass(this,'warrior')" data-cls="warrior"><span class="cls-opt-ico">⚔️</span><span class="cls-opt-n">Warrior</span></div>
+            <div class="cls-opt" onclick="selectClass(this,'mage')" data-cls="mage"><span class="cls-opt-ico">🧙‍♂️</span><span class="cls-opt-n">Mage</span></div>
+            <div class="cls-opt" onclick="selectClass(this,'ninja')" data-cls="ninja"><span class="cls-opt-ico">🥷</span><span class="cls-opt-n">Ninja</span></div>
+            <div class="cls-opt" onclick="selectClass(this,'archer')" data-cls="archer"><span class="cls-opt-ico">🏹</span><span class="cls-opt-n">Archer</span></div>
+            <div class="cls-opt" onclick="selectClass(this,'paladin')" data-cls="paladin"><span class="cls-opt-ico">🛡️</span><span class="cls-opt-n">Paladin</span></div>
+            <div class="cls-opt" onclick="selectClass(this,'summoner')" data-cls="summoner"><span class="cls-opt-ico">🌟</span><span class="cls-opt-n">Summoner</span></div>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-p" style="width:100%;margin-top:.3rem" id="signupBtn">🌟 Create Warrior</button>
+        <div class="divider">or</div>
+        <button type="button" class="btn-gg" onclick="handleGoogleAuth()">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285f4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34a853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fbbc05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#ea4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Continue with Google
+        </button>
+        <div class="auth-sw">Already a warrior? <a onclick="switchAuthTab('login')">Login</a></div>
+      </form>
+    </div>
+  </div>
+</div><!-- /auth -->
+
+<!-- ══════════════════════════════════════════════
+     DASHBOARD
+══════════════════════════════════════════════ -->
+<div id="dashboard" class="screen">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <span class="sb-lbl">Navigate</span>
+    <div class="sb-item active" onclick="goTo('dashboard')"><span class="sb-ico">🏠</span>Dashboard</div>
+    <div class="sb-item" onclick="goTo('worldmap')"><span class="sb-ico">🗺️</span>World Map</div>
+    <div class="sb-item" onclick="goTo('quest')"><span class="sb-ico">⚔️</span>Active Quest<span class="sb-badge">NEW</span></div>
+    <div class="sb-item" onclick="goTo('profile')"><span class="sb-ico">👤</span>My Profile</div>
+    <div class="sb-item" onclick="goTo('leaderboard')"><span class="sb-ico">🏆</span>Leaderboard</div>
+    <span class="sb-lbl">Worlds</span>
+    <div class="sb-item" onclick="goTo('worldmap')"><span class="sb-ico">🌲</span>Python Forest</div>
+    <div class="sb-item" style="opacity:.45;cursor:not-allowed"><span class="sb-ico">🏙️</span>JS City 🔒</div>
+    <div class="sb-item" style="opacity:.45;cursor:not-allowed"><span class="sb-ico">🌌</span>AI Universe 🔒</div>
+    <div class="sb-sep"></div>
+    <div class="sb-item" onclick="handleLogout()" style="color:var(--pk)"><span class="sb-ico">🚪</span>Logout</div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- Character Banner -->
+    <div class="char-banner">
+      <div class="cbanner-bg"></div>
+      <div class="char-av">
+        <span id="dbAvatar">🧙‍♂️</span>
+        <div class="char-lv" id="dbLevel">5</div>
+      </div>
+      <div class="char-info">
+        <div class="char-name" id="dbName">ShadowCoder</div>
+        <div class="char-cls" id="dbCls">// MAGE CLASS · PYTHON FOREST</div>
+        <div class="char-tags">
+          <span class="badge bc">🔥 7-Day Streak</span>
+          <span class="badge bp">⚔️ Quest Slayer</span>
+          <span class="badge bg">🌟 Rising Legend</span>
+        </div>
+        <div class="xb">
+          <div class="xb-lbl"><span>Level <span id="dbLvTxt">5</span></span><span><span id="dbXpCur">1250</span> / <span id="dbXpNeed">2000</span> XP</span></div>
+          <div class="xb-track"><div class="xb-fill" id="dbXpBar" style="width:62.5%"></div></div>
+        </div>
+      </div>
+      <div class="char-stats-r">
+        <div class="csr"><span class="csr-val ng" id="dbRank">#142</span><span class="csr-lbl">Global Rank</span></div>
+        <div class="csr"><span class="csr-val" id="dbQDone">23</span><span class="csr-lbl">Quests Done</span></div>
+        <div class="csr"><span class="csr-val" style="color:var(--pk)" id="dbStreak">7</span><span class="csr-lbl">Day Streak</span></div>
+      </div>
+    </div>
+
+    <!-- Daily Quest -->
+    <div class="daily-q">
+      <div class="dq-ico">🌟</div>
+      <div class="dq-body">
+        <div class="dq-tag">// DAILY QUEST — EXPIRES IN</div>
+        <div class="dq-title">The Fibonacci Serpent</div>
+        <div class="dq-desc">Write a Python function that generates the Fibonacci sequence up to n terms. The ancient serpent awaits!</div>
+        <div style="margin-top:.65rem;display:flex;align-items:center;gap:.85rem">
+          <button class="btn btn-g btn-sm" onclick="goTo('quest')">⚔️ Accept Quest</button>
+          <span style="font-size:.72rem;color:var(--t3)">+500 XP + Daily Badge</span>
+        </div>
+      </div>
+      <div class="dq-timer"><span class="dq-tv" id="dailyTimer">08:42:17</span><span class="dq-tl">remaining</span></div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="dash-grid3">
+      <div class="qsc"><div class="qsc-ico" style="background:rgba(0,245,255,.08)">⭐</div><div><span class="qsc-val nc" id="dbTotalXp">1,250</span><span class="qsc-lbl">Total XP Earned</span></div></div>
+      <div class="qsc"><div class="qsc-ico" style="background:rgba(255,215,0,.08)">🏆</div><div><span class="qsc-val ng" id="dbBadges">8</span><span class="qsc-lbl">Badges Unlocked</span></div></div>
+      <div class="qsc"><div class="qsc-ico" style="background:rgba(57,255,20,.08)">✅</div><div><span class="qsc-val" style="color:var(--gn)" id="dbChall">23</span><span class="qsc-lbl">Challenges Solved</span></div></div>
+    </div>
+
+    <!-- Grid -->
+    <div class="dash-grid-wide">
+      <div style="display:flex;flex-direction:column;gap:1.25rem">
+        <!-- Quests -->
+        <div class="panel">
+          <div class="ph"><span class="pt">⚔️ Continue Quest</span><span class="pa" onclick="goTo('worldmap')">View All →</span></div>
+          <div class="aq-card" onclick="goTo('quest')"><div class="aq-ico">🐍</div><div style="flex:1"><div class="aq-nm">Chapter 3: The Variable Vault</div><div class="aq-meta"><span>🌲 Python Forest</span><span>•</span><span>Intermediate</span></div><div class="aq-qmini"><div class="aq-qfill" style="width:65%"></div></div></div><div class="aq-xp">+150 XP</div></div>
+          <div class="aq-card" onclick="goTo('quest')"><div class="aq-ico">🔄</div><div style="flex:1"><div class="aq-nm">Chapter 4: Loop Labyrinth</div><div class="aq-meta"><span>🌲 Python Forest</span><span>•</span><span>Intermediate</span></div><div class="aq-qmini"><div class="aq-qfill" style="width:0%"></div></div></div><div class="aq-xp">+200 XP</div></div>
+          <div class="aq-card" onclick="goTo('quest')"><div class="aq-ico">⚡</div><div style="flex:1"><div class="aq-nm">Chapter 5: Function Forge</div><div class="aq-meta"><span>🌲 Python Forest</span><span>•</span><span>Advanced</span></div><div class="aq-qmini"><div class="aq-qfill" style="width:0%"></div></div></div><div class="aq-xp">+300 XP</div></div>
+        </div>
+        <!-- World Progress -->
+        <div class="panel">
+          <div class="ph"><span class="pt">🗺️ World Progress</span><span class="pa" onclick="goTo('worldmap')">Map →</span></div>
+          <div class="wp-item"><span class="wp-ico">🌲</span><div class="wp-info"><div class="wp-nm">Python Forest</div><div class="wp-bt"><div class="wp-bf" style="width:45%;background:linear-gradient(90deg,#3d8b37,#4caf50)"></div></div></div><span class="wp-pct">45%</span></div>
+          <div class="wp-item" style="opacity:.45"><span class="wp-ico">🏙️</span><div class="wp-info"><div class="wp-nm">JavaScript City 🔒</div><div class="wp-bt"><div class="wp-bf" style="width:0%"></div></div></div><span class="wp-pct">0%</span></div>
+          <div class="wp-item" style="opacity:.45"><span class="wp-ico">🏔️</span><div class="wp-info"><div class="wp-nm">HTML Valley 🔒</div><div class="wp-bt"><div class="wp-bf" style="width:0%"></div></div></div><span class="wp-pct">0%</span></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1.25rem">
+        <!-- Streak -->
+        <div class="panel">
+          <div class="ph"><span class="pt">🔥 Login Streak</span><span style="font-size:.8rem;color:var(--g)">7 Days!</span></div>
+          <div class="streak-row" id="streakRow"></div>
+        </div>
+        <!-- Mini Leaderboard -->
+        <div class="panel">
+          <div class="ph"><span class="pt">👑 Top Warriors</span><span class="pa" onclick="goTo('leaderboard')">Full →</span></div>
+          <div class="lb-item"><span class="lb-rank r1">1</span><span class="lb-av">🥷</span><span class="lb-nm">XenoCoder</span><span class="lb-xp">12,540 XP</span></div>
+          <div class="lb-item"><span class="lb-rank r2">2</span><span class="lb-av">🧙‍♀️</span><span class="lb-nm">Aetheria</span><span class="lb-xp">11,200 XP</span></div>
+          <div class="lb-item"><span class="lb-rank r3">3</span><span class="lb-av">⚔️</span><span class="lb-nm">ByteKnight</span><span class="lb-xp">9,880 XP</span></div>
+          <div class="lb-item"><span class="lb-rank">4</span><span class="lb-av">🏹</span><span class="lb-nm">ArrowByte</span><span class="lb-xp">8,700 XP</span></div>
+          <div class="lb-item" style="background:rgba(0,245,255,.03);border-radius:4px;padding:.52rem .4rem"><span class="lb-rank nc">142</span><span class="lb-av">🧙‍♂️</span><span class="lb-nm nc">You</span><span class="lb-xp">1,250 XP</span></div>
+        </div>
+        <!-- Achievements -->
+        <div class="panel">
+          <div class="ph"><span class="pt">🏅 Achievements</span><span class="pa" onclick="goTo('profile')">All →</span></div>
+          <div class="ach-grid">
+            <div class="ach-item" title="First Blood"><span class="ach-em">⚔️</span><span class="ach-nm">First Blood</span></div>
+            <div class="ach-item" title="On Fire!"><span class="ach-em">🔥</span><span class="ach-nm">On Fire!</span></div>
+            <div class="ach-item" title="Python Initiate"><span class="ach-em">🐍</span><span class="ach-nm">Initiate</span></div>
+            <div class="ach-item" title="Speed Run"><span class="ach-em">⚡</span><span class="ach-nm">Speed Run</span></div>
+            <div class="ach-item lk" title="Locked"><span class="ach-em">🌌</span><span class="ach-nm">AI Master</span></div>
+            <div class="ach-item lk" title="Locked"><span class="ach-em">👑</span><span class="ach-nm">CSS King</span></div>
+            <div class="ach-item lk" title="Locked"><span class="ach-em">🏆</span><span class="ach-nm">Legend</span></div>
+            <div class="ach-item lk" title="Locked"><span class="ach-em">💎</span><span class="ach-nm">Diamond</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div><!-- /dashboard -->
+
+<!-- ══════════════════════════════════════════════
+     WORLD MAP
+══════════════════════════════════════════════ -->
+<div id="worldmap" class="screen">
+  <div class="wm-hero">
+    <div class="wm-hero-bg"></div>
+    <h1 class="gtext" style="position:relative;z-index:1">The Code Realm</h1>
+    <p style="color:var(--t2);max-width:460px;margin:.65rem auto 0;font-size:.96rem;position:relative;z-index:1;line-height:1.6">Six legendary worlds await your conquest. Complete quests, earn XP, unlock new realms.</p>
+  </div>
+  <div class="world-path">
+    <div class="wpath-line"></div>
+
+    <!-- World 1: Python Forest (LEFT) -->
+    <div class="wnode">
+      <div class="wnc-card unl" style="--wbc:rgba(61,139,55,.4)">
+        <div class="wct"><span class="wci">🌲</span><div class="wck" style="background:rgba(57,255,20,.08);color:var(--gn)">✓</div></div>
+        <div class="wc-title">Python Forest</div>
+        <span class="wc-lt" style="background:rgba(61,139,55,.12);color:#4caf50">Python 3</span>
+        <p class="wc-desc">The ancient forest where digital serpents guard the sacred scrolls. Master the basics and claim the Serpent's Crown.</p>
+        <div class="wc-stats">
+          <div class="wcs"><span class="wcsv">12</span><span class="wcsl">Quests</span></div>
+          <div class="wcs"><span class="wcsv ng">500</span><span class="wcsl">Max XP</span></div>
+          <div class="wcs"><span class="wcsv" style="color:var(--gn)">45%</span><span class="wcsl">Progress</span></div>
+        </div>
+        <div class="wc-prog"><div class="wc-ptop"><span>Chapter Progress</span><span>5/12 quests</span></div><div class="xb-track"><div class="xb-fill" style="width:45%;background:linear-gradient(90deg,#3d8b37,#4caf50)"></div></div></div>
+        <div class="quest-mini-list">
+          <div class="qmi"><div class="qdot qd-done"></div>Ch.1: Hello, World</div>
+          <div class="qmi"><div class="qdot qd-done"></div>Ch.2: Variables & Types</div>
+          <div class="qmi"><div class="qdot qd-active"></div>Ch.3: The Variable Vault</div>
+          <div class="qmi"><div class="qdot qd-todo"></div>Ch.4: Loop Labyrinth</div>
+          <div class="qmi"><div class="qdot qd-todo"></div>Ch.5: Function Forge</div>
+        </div>
+        <div class="boss-bar"><span class="boss-ico">🐉</span><div><div class="boss-nm">Boss: The Serpent King</div><div class="boss-info">Final challenge — defeat to unlock JS City</div></div><span class="badge bpk">🔒 Locked</span></div>
+        <button class="btn btn-p" style="width:100%;margin-top:1rem" onclick="goTo('quest')">⚔️ Continue Quest</button>
+      </div>
+      <div class="wnc-center">
+        <div class="wn-ico unlocked" style="--wic:#4caf50;--wig:rgba(61,139,55,.4)" onclick="goTo('quest')">🌲</div>
+        <span class="wn-lbl">WORLD 1</span>
+      </div>
+      <div class="wnc-empty"></div>
+    </div>
+
+    <!-- World 2: JS City (RIGHT) -->
+    <div class="wnode nr">
+      <div class="wnc-empty"></div>
+      <div class="wnc-center">
+        <div class="wn-ico locked">🏙️</div>
+        <span class="wn-lbl">WORLD 2</span>
+      </div>
+      <div class="wnc-card lkd">
+        <div class="wct"><span class="wci">🏙️</span><div class="wck">🔒</div></div>
+        <div class="wc-title">JavaScript City</div>
+        <span class="wc-lt" style="background:rgba(240,180,41,.12);color:#ffd700">JavaScript ES6+</span>
+        <p class="wc-desc">A neon megacity that never sleeps. DOM manipulation, async spells, event-driven power. The Neon Overlord rules here.</p>
+        <div class="wc-stats">
+          <div class="wcs"><span class="wcsv">18</span><span class="wcsl">Quests</span></div>
+          <div class="wcs"><span class="wcsv ng">700</span><span class="wcsl">Max XP</span></div>
+          <div class="wcs"><span class="wcsv">0%</span><span class="wcsl">Progress</span></div>
+        </div>
+        <button class="btn btn-s" style="width:100%;opacity:.5;cursor:not-allowed" disabled>🔒 Finish Python Forest First</button>
+      </div>
+    </div>
+
+    <!-- World 3: HTML Valley (LEFT) -->
+    <div class="wnode">
+      <div class="wnc-card lkd">
+        <div class="wct"><span class="wci">🏔️</span><div class="wck">🔒</div></div>
+        <div class="wc-title">HTML Valley</div>
+        <span class="wc-lt" style="background:rgba(227,76,38,.12);color:#ff6b47">HTML5</span>
+        <p class="wc-desc">The Valley of Structures. Build foundations of the digital world. Every tag is stone, every page a cathedral.</p>
+        <button class="btn btn-s" style="width:100%;opacity:.5;cursor:not-allowed" disabled>🔒 Locked</button>
+      </div>
+      <div class="wnc-center">
+        <div class="wn-ico locked">🏔️</div>
+        <span class="wn-lbl">WORLD 3</span>
+      </div>
+      <div class="wnc-empty"></div>
+    </div>
+
+    <!-- World 4: CSS Kingdom (RIGHT) -->
+    <div class="wnode nr">
+      <div class="wnc-empty"></div>
+      <div class="wnc-center">
+        <div class="wn-ico locked">👑</div>
+        <span class="wn-lbl">WORLD 4</span>
+      </div>
+      <div class="wnc-card lkd">
+        <div class="wct"><span class="wci">👑</span><div class="wck">🔒</div></div>
+        <div class="wc-title">CSS Kingdom</div>
+        <span class="wc-lt" style="background:rgba(38,77,228,.12);color:#5b7fff">CSS3</span>
+        <p class="wc-desc">A realm of beauty ruled by the Style Witch. Flexbox sorcery, grid enchantments, animation spells await.</p>
+        <button class="btn btn-s" style="width:100%;opacity:.5;cursor:not-allowed" disabled>🔒 Locked</button>
+      </div>
+    </div>
+
+    <!-- World 5: Cyber Dungeon (LEFT) -->
+    <div class="wnode">
+      <div class="wnc-card lkd">
+        <div class="wct"><span class="wci">🏰</span><div class="wck">🔒</div></div>
+        <div class="wc-title">Cybersecurity Dungeon</div>
+        <span class="wc-lt" style="background:rgba(139,0,0,.12);color:#ff4444">Security</span>
+        <p class="wc-desc">Descend into the dark dungeon of digital warfare. Cryptography, ethical hacking, ancient arts of defense.</p>
+        <button class="btn btn-s" style="width:100%;opacity:.5;cursor:not-allowed" disabled>🔒 Locked</button>
+      </div>
+      <div class="wnc-center">
+        <div class="wn-ico locked">🏰</div>
+        <span class="wn-lbl">WORLD 5</span>
+      </div>
+      <div class="wnc-empty"></div>
+    </div>
+
+    <!-- World 6: AI Universe (RIGHT) -->
+    <div class="wnode nr">
+      <div class="wnc-empty"></div>
+      <div class="wnc-center">
+        <div class="wn-ico locked">🌌</div>
+        <span class="wn-lbl">WORLD 6</span>
+      </div>
+      <div class="wnc-card lkd">
+        <div class="wct"><span class="wci">🌌</span><div class="wck">🔒</div></div>
+        <div class="wc-title">AI Universe</div>
+        <span class="wc-lt" style="background:rgba(123,47,190,.12);color:#bf5fff">Python / ML</span>
+        <p class="wc-desc">The final frontier. Neural networks, machine learning, the godlike power of AI. Only the worthy enter.</p>
+        <div class="boss-bar"><span class="boss-ico">🧠</span><div><div class="boss-nm">Final Boss: The Neural God</div><div class="boss-info">Build a working neural network from scratch</div></div><span class="badge bp">FINAL</span></div>
+        <button class="btn btn-s" style="width:100%;opacity:.5;cursor:not-allowed" disabled>🔒 Locked</button>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /worldmap -->
+
+<!-- ══════════════════════════════════════════════
+     QUEST PAGE
+══════════════════════════════════════════════ -->
+<div id="quest" class="screen">
+  <!-- Success Modal -->
+  <div class="modal-ov hidden" id="successModal">
+    <div class="modal-box">
+      <span class="modal-em">🏆</span>
+      <h2 class="gtext" style="font-size:1.7rem">Quest Complete!</h2>
+      <div class="modal-xp-amt" id="modalXp">+150 XP</div>
+      <p style="color:var(--t2);font-size:.88rem" id="modalDesc">You've mastered Variables in Python!</p>
+      <div class="modal-acts">
+        <button class="btn btn-s btn-sm" onclick="closeModal()">Stay Here</button>
+        <button class="btn btn-p btn-sm" onclick="goTo('worldmap')">Next Quest →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Story Panel -->
+  <aside class="qstory">
+    <div class="qhdr">
+      <div class="qbc">🌲 Python Forest › <span>Chapter 3</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="qtitle">⚔️ The Variable Vault</div>
+        <div style="text-align:right;flex-shrink:0"><div style="font-family:var(--fd);font-size:.95rem;font-weight:900;color:var(--g)">+150 XP</div><div style="font-size:.62rem;color:var(--t3);font-family:var(--fc)">reward</div></div>
+      </div>
+      <div class="qmeta"><span class="badge bgn">🐍 Python</span><span class="badge bc">Beginner</span><span class="badge bp">Variables</span></div>
+    </div>
+    <div class="qscroll">
+      <div class="story-blk"><span class="s-spk">🧙‍♂️ The Code Sage speaks:</span>"Young warrior, deep in the Python Forest lies the ancient Variable Vault. Its guardian, the Data Golem, demands proof of your knowledge before granting passage."</div>
+      <div class="story-blk" style="border-left-color:var(--g)"><span class="s-spk" style="color:var(--g)">📜 Ancient Scroll says:</span>"A variable is a named container that stores a value. In Python, no type declaration needed — just assign!"</div>
+
+      <div class="q-sec-t">📚 Learn</div>
+      <div class="concept">
+        <p>In Python, <strong style="color:var(--t1)">variables</strong> are created when you assign a value using <code style="color:var(--c);padding:.08rem .3rem;background:var(--elevated);border-radius:3px">=</code></p>
+        <br><p>Python data types:</p>
+        <ul style="margin-top:.4rem;padding-left:1rem;color:var(--t2);display:flex;flex-direction:column;gap:.22rem">
+          <li><code style="color:var(--c)">int</code> — integers like <code style="color:var(--g)">42</code></li>
+          <li><code style="color:var(--c)">float</code> — decimals like <code style="color:var(--g)">3.14</code></li>
+          <li><code style="color:var(--c)">str</code> — text like <code style="color:var(--g)">"hello"</code></li>
+          <li><code style="color:var(--c)">bool</code> — <code style="color:var(--p)">True</code> or <code style="color:var(--p)">False</code></li>
+        </ul>
+      </div>
+      <div class="code-ex">
+        <div class="ce-hdr"><span class="ce-lang">python</span><span style="font-size:.62rem;color:var(--t3)">Example</span></div>
+        <pre class="ce-pre"><span class="ce-cm"># Variables in Python</span>
+<span class="ce-kw">name</span> = <span class="ce-str">"Warrior"</span>
+<span class="ce-kw">level</span> = <span class="ce-fn">5</span>
+<span class="ce-kw">health</span> = <span class="ce-fn">98.5</span>
+<span class="ce-kw">is_alive</span> = <span class="ce-kw">True</span>
+
+<span class="ce-fn">print</span>(<span class="ce-str">f"Name: {name}, Level: {level}"</span>)
+<span class="ce-cm"># Output: Name: Warrior, Level: 5</span></pre>
+      </div>
+
+      <div class="q-sec-t">⚔️ Your Mission</div>
+      <ul class="task-list">
+        <li class="task-item"><span class="t-num">01</span>Create <code style="color:var(--c)">hero_name</code> — a string with your warrior name</li>
+        <li class="task-item"><span class="t-num">02</span>Create <code style="color:var(--c)">power_level</code> — an integer greater than 9000</li>
+        <li class="task-item"><span class="t-num">03</span>Create <code style="color:var(--c)">mana_percent</code> — a float between 0.0 and 100.0</li>
+        <li class="task-item"><span class="t-num">04</span>Print all three variables using an f-string</li>
+      </ul>
+
+      <div class="q-sec-t" style="margin-top:1.4rem">💡 Hints</div>
+      <button class="btn btn-s btn-sm" style="width:100%" onclick="revealHint()">Use Hint (-25 XP)</button>
+      <div class="hint-box" id="hintBox"><strong style="color:var(--g)">💡 Hint:</strong> Use f-strings like this:<br><code style="color:var(--c)">print(f"Hero: {hero_name}, Power: {power_level}")</code></div>
+    </div>
+  </aside>
+
+  <!-- Editor Panel -->
+  <div class="qeditor">
+    <div class="etoolbar">
+      <span class="elang">🐍 Python</span>
+      <button class="btn btn-s btn-sm" onclick="resetEditor()">↺ Reset</button>
+      <button class="btn btn-s btn-sm" onclick="formatCode()">✦ Format</button>
+      <div class="esp"></div>
+      <span class="etimer" id="questTimer">⏱ 00:00</span>
+      <button class="btn btn-s btn-sm" id="runBtn" onclick="runCode()">▶ Run</button>
+      <button class="btn btn-g btn-sm" onclick="submitCode()">⚔️ Submit</button>
+    </div>
+
+    <div id="monacoEditor"></div>
+
+    <div class="outpanel">
+      <div class="out-tabs">
+        <button class="otab active" id="otConsole" onclick="switchOut('console',this)">Console</button>
+        <button class="otab" id="otTests" onclick="switchOut('tests',this)">Tests</button>
+        <button class="otab" id="otAI" onclick="switchOut('ai',this)">AI Sensei 🤖</button>
+      </div>
+      <div class="out-content" id="ocConsole">
+        <div class="ol mut">// Run your code to see output here</div>
+        <div class="ol mut">// Press ▶ Run or Ctrl+Enter</div>
+      </div>
+      <div class="out-content hidden" id="ocTests">
+        <div class="tc"><span class="tc-st" id="t1s">⬜</span><span class="tc-nm">hero_name is a non-empty string</span><span class="tc-res" id="t1r">Not run</span></div>
+        <div class="tc"><span class="tc-st" id="t2s">⬜</span><span class="tc-nm">power_level is integer > 9000</span><span class="tc-res" id="t2r">Not run</span></div>
+        <div class="tc"><span class="tc-st" id="t3s">⬜</span><span class="tc-nm">mana_percent is float 0.0–100.0</span><span class="tc-res" id="t3r">Not run</span></div>
+        <div class="tc"><span class="tc-st" id="t4s">⬜</span><span class="tc-nm">All vars printed using f-string</span><span class="tc-res" id="t4r">Not run</span></div>
+      </div>
+      <div class="out-content hidden" id="ocAI">
+        <div class="ol inf">🤖 AI Sensei is ready to help!</div>
+        <div class="ol mut" style="margin-bottom:.65rem">Ask me anything about this quest...</div>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+          <button class="btn btn-s btn-sm" onclick="askSensei('variables')">Explain variables</button>
+          <button class="btn btn-s btn-sm" onclick="askSensei('fstring')">F-string help</button>
+          <button class="btn btn-s btn-sm" onclick="askSensei('debug')">Debug my code</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /quest -->
+
+<!-- ══════════════════════════════════════════════
+     PROFILE
+══════════════════════════════════════════════ -->
+<div id="profile" class="screen">
+  <div class="profile-hero">
+    <div class="ph-bg"></div>
+    <div class="wrap">
+      <div class="profile-inner">
+        <div class="profile-av">
+          <span id="pfAv">🧙‍♂️</span>
+          <div class="profile-lv" id="pfLv">5</div>
+        </div>
+        <div class="profile-info">
+          <div class="profile-name" id="pfName">ShadowCoder</div>
+          <div class="profile-cls" id="pfCls">// MAGE CLASS · PYTHON REALM</div>
+          <div class="profile-tags">
+            <span class="badge bc">🔥 7-Day Streak</span>
+            <span class="badge bp">⚔️ Quest Slayer</span>
+            <span class="badge bg">🌟 Rising Legend</span>
+          </div>
+          <div style="max-width:380px">
+            <div class="xb">
+              <div class="xb-lbl"><span>Level 5</span><span>1,250 / 2,000 XP</span></div>
+              <div class="xb-track"><div class="xb-fill" style="width:62.5%"></div></div>
+            </div>
+          </div>
+          <div class="profile-stats-row" style="margin-top:1rem">
+            <div class="psr"><span class="psr-val ng">#142</span><span class="psr-lbl">Global Rank</span></div>
+            <div class="psr"><span class="psr-val">23</span><span class="psr-lbl">Quests Done</span></div>
+            <div class="psr"><span class="psr-val" style="color:var(--pk)">7</span><span class="psr-lbl">Day Streak</span></div>
+            <div class="psr"><span class="psr-val nc">1,250</span><span class="psr-lbl">Total XP</span></div>
+            <div class="psr"><span class="psr-val ng">8</span><span class="psr-lbl">Badges</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="profile-body">
+    <div class="wrap">
+      <div class="profile-grid">
+        <!-- Left col -->
+        <div style="display:flex;flex-direction:column;gap:1.25rem">
+          <div class="panel">
+            <div class="ph"><span class="pt">📊 Stats Overview</span></div>
+            <div style="display:flex;flex-direction:column;gap:.85rem">
+              <div><div style="display:flex;justify-content:space-between;font-size:.78rem;color:var(--t2);margin-bottom:.3rem"><span>Python Forest</span><span style="color:var(--gn)">45%</span></div><div class="xb-track"><div class="xb-fill" style="width:45%;background:linear-gradient(90deg,#3d8b37,#4caf50)"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:.78rem;color:var(--t2);margin-bottom:.3rem"><span>Accuracy Rate</span><span style="color:var(--c)">78%</span></div><div class="xb-track"><div class="xb-fill" style="width:78%"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:.78rem;color:var(--t2);margin-bottom:.3rem"><span>Streak Best</span><span style="color:var(--g)">12 days</span></div><div class="xb-track"><div class="xb-fill" style="width:58%;background:linear-gradient(90deg,var(--g),var(--o))"></div></div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="ph"><span class="pt">⚙️ Settings</span></div>
+            <div style="display:flex;flex-direction:column;gap:.75rem">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:.85rem;color:var(--t2)">Dark Mode</span><div style="background:var(--c);border-radius:999px;width:36px;height:20px;position:relative;cursor:pointer"><div style="position:absolute;right:2px;top:2px;width:16px;height:16px;background:white;border-radius:50%"></div></div></div>
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:.85rem;color:var(--t2)">Sound Effects</span><div style="background:var(--p);border-radius:999px;width:36px;height:20px;position:relative;cursor:pointer"><div style="position:absolute;right:2px;top:2px;width:16px;height:16px;background:white;border-radius:50%"></div></div></div>
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:.85rem;color:var(--t2)">Notifications</span><div style="background:var(--elevated);border:1px solid var(--bd1);border-radius:999px;width:36px;height:20px;position:relative;cursor:pointer"><div style="position:absolute;left:2px;top:2px;width:16px;height:16px;background:var(--t3);border-radius:50%"></div></div></div>
+              <button class="btn btn-pk btn-sm" style="width:100%;margin-top:.4rem" onclick="handleLogout()">🚪 Logout</button>
+            </div>
+          </div>
+        </div>
+        <!-- Right col: Achievements -->
+        <div class="panel">
+          <div class="ph"><span class="pt">🏅 All Achievements</span><span style="font-size:.75rem;color:var(--t3)">8 / 24 Unlocked</span></div>
+          <div class="ach-full-grid">
+            <div class="ach-full-item"><span class="ach-full-em">⚔️</span><span class="ach-full-nm">First Blood</span><span class="ach-full-desc">Complete first quest</span></div>
+            <div class="ach-full-item"><span class="ach-full-em">🔥</span><span class="ach-full-nm">On Fire!</span><span class="ach-full-desc">7-day streak</span></div>
+            <div class="ach-full-item"><span class="ach-full-em">🐍</span><span class="ach-full-nm">Python Initiate</span><span class="ach-full-desc">Enter Python Forest</span></div>
+            <div class="ach-full-item"><span class="ach-full-em">⚡</span><span class="ach-full-nm">Speed Run</span><span class="ach-full-desc">Complete quest &lt;2 min</span></div>
+            <div class="ach-full-item"><span class="ach-full-em">🎯</span><span class="ach-full-nm">Perfect Score</span><span class="ach-full-desc">No hints used</span></div>
+            <div class="ach-full-item"><span class="ach-full-em">📅</span><span class="ach-full-nm">Daily Hero</span><span class="ach-full-desc">Complete daily quest</span></div>
+            <div class="ach-full-item"><span class="ach-full-em">💡</span><span class="ach-full-nm">Curious Mind</span><span class="ach-full-desc">Ask AI Sensei 5x</span></div>
+            <div class="ach-full-item"><span class="ach-full-em">🏅</span><span class="ach-full-nm">Top 200</span><span class="ach-full-desc">Reach rank 200</span></div>
+            <div class="ach-full-item lk"><span class="ach-full-em">🏙️</span><span class="ach-full-nm">City Slicker</span><span class="ach-full-desc">Enter JS City</span></div>
+            <div class="ach-full-item lk"><span class="ach-full-em">👑</span><span class="ach-full-nm">CSS King</span><span class="ach-full-desc">Complete CSS Kingdom</span></div>
+            <div class="ach-full-item lk"><span class="ach-full-em">🏆</span><span class="ach-full-nm">Top 50</span><span class="ach-full-desc">Reach rank 50</span></div>
+            <div class="ach-full-item lk"><span class="ach-full-em">🌌</span><span class="ach-full-nm">AI Master</span><span class="ach-full-desc">Enter AI Universe</span></div>
+            <div class="ach-full-item lk"><span class="ach-full-em">🐉</span><span class="ach-full-nm">Boss Slayer</span><span class="ach-full-desc">Defeat Serpent King</span></div>
+            <div class="ach-full-item lk"><span class="ach-full-em">💎</span><span class="ach-full-nm">Diamond Coder</span><span class="ach-full-desc">Reach level 20</span></div>
+            <div class="ach-full-item lk"><span class="ach-full-em">🌟</span><span class="ach-full-nm">Legend</span><span class="ach-full-desc">Complete all worlds</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /profile -->
+
+<!-- ══════════════════════════════════════════════
+     LEADERBOARD
+══════════════════════════════════════════════ -->
+<div id="leaderboard" class="screen">
+  <div class="lb-hero">
+    <div class="lb-hero-bg"></div>
+    <h1 class="np" style="position:relative;z-index:1">🏆 Hall of Legends</h1>
+    <p style="color:var(--t2);max-width:420px;margin:.6rem auto 0;font-size:.95rem;position:relative;z-index:1">The greatest warriors of the Code Realm. Will your name be etched here?</p>
+    <div class="lb-tabs">
+      <button class="lb-tab active">Global</button>
+      <button class="lb-tab">Weekly</button>
+      <button class="lb-tab">Python Forest</button>
+    </div>
+  </div>
+  <div class="lb-body">
+    <!-- Podium -->
+    <div class="lb-podium">
+      <div class="pod-item pod-2">
+        <div class="pod-av" style="width:66px;height:66px;border:2px solid #c0c0c0">🧙‍♀️</div>
+        <div class="pod-pos">#2</div>
+        <div class="pod-name">Aetheria</div>
+        <div class="pod-xp">11,200 XP</div>
+        <div class="pod-base" style="height:70px;width:80px;background:rgba(192,192,192,.08);border:1px solid rgba(192,192,192,.18);border-radius:8px 8px 0 0"></div>
+      </div>
+      <div class="pod-item pod-1">
+        <div class="pod-crown">👑</div>
+        <div class="pod-av" style="width:82px;height:82px;border:2px solid var(--g);box-shadow:0 0 20px rgba(255,215,0,.4)">🥷</div>
+        <div class="pod-pos">#1</div>
+        <div class="pod-name">XenoCoder</div>
+        <div class="pod-xp">12,540 XP</div>
+        <div class="pod-base" style="height:90px;width:100px;background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.2);border-radius:8px 8px 0 0"></div>
+      </div>
+      <div class="pod-item pod-3">
+        <div class="pod-av" style="width:60px;height:60px;border:2px solid #cd7f32">⚔️</div>
+        <div class="pod-pos">#3</div>
+        <div class="pod-name">ByteKnight</div>
+        <div class="pod-xp">9,880 XP</div>
+        <div class="pod-base" style="height:55px;width:75px;background:rgba(205,127,50,.08);border:1px solid rgba(205,127,50,.18);border-radius:8px 8px 0 0"></div>
+      </div>
+    </div>
+    <!-- List -->
+    <div class="lb-list">
+      <div class="lb-row"><span class="lbr-rank">4</span><span class="lbr-av">🏹</span><div class="lbr-info"><div class="lbr-nm">ArrowByte</div><div class="lbr-cls">Archer · CSS Kingdom</div></div><span class="lbr-xp">8,700 XP</span><div class="lbr-badges"><span title="7-day streak">🔥</span></div></div>
+      <div class="lb-row"><span class="lbr-rank">5</span><span class="lbr-av">🛡️</span><div class="lbr-info"><div class="lbr-nm">IronGuard</div><div class="lbr-cls">Paladin · JavaScript City</div></div><span class="lbr-xp">7,220 XP</span><div class="lbr-badges"></div></div>
+      <div class="lb-row"><span class="lbr-rank">6</span><span class="lbr-av">🌟</span><div class="lbr-info"><div class="lbr-nm">NovaStar</div><div class="lbr-cls">Summoner · HTML Valley</div></div><span class="lbr-xp">6,890 XP</span><div class="lbr-badges"><span title="Speed runner">⚡</span></div></div>
+      <div class="lb-row"><span class="lbr-rank">7</span><span class="lbr-av">🔮</span><div class="lbr-info"><div class="lbr-nm">CrystalMind</div><div class="lbr-cls">Mage · Python Forest</div></div><span class="lbr-xp">5,430 XP</span><div class="lbr-badges"></div></div>
+      <div class="lb-row"><span class="lbr-rank">8</span><span class="lbr-av">⚡</span><div class="lbr-info"><div class="lbr-nm">VoltKid</div><div class="lbr-cls">Warrior · Python Forest</div></div><span class="lbr-xp">4,780 XP</span><div class="lbr-badges"></div></div>
+      <div style="text-align:center;padding:1rem;font-size:.78rem;color:var(--t3)">· · ·</div>
+      <div class="lb-row me"><span class="lbr-rank nc">142</span><span class="lbr-av">🧙‍♂️</span><div class="lbr-info"><div class="lbr-nm nc">You (ShadowCoder)</div><div class="lbr-cls">Mage · Python Forest</div></div><span class="lbr-xp">1,250 XP</span><div class="lbr-badges"><span title="On Fire!">🔥</span></div></div>
+    </div>
+  </div>
+</div><!-- /leaderboard -->
+
+<!-- Monaco Editor CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+<script>
+// ══════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════
+const STATE = {
+  loggedIn: false,
+  user: {
+    name: 'ShadowCoder',
+    email: 'warrior@realm.com',
+    cls: 'mage',
+    avatar: '🧙‍♂️',
+    level: 5,
+    xp: 1250,
+    xpNeeded: 2000,
+    rank: 142,
+    streak: 7,
+    questsDone: 23,
+    badges: 8
+  },
+  selectedClass: 'warrior',
+  hintsUsed: 0,
+  questSeconds: 0,
+  questTimerInterval: null,
+  editor: null
+};
+
+const CLASS_AVATARS = {
+  warrior:'⚔️', mage:'🧙‍♂️', ninja:'🥷', archer:'🏹', paladin:'🛡️', summoner:'🌟'
+};
+
+const STARTER_CODE = `# ⚔️ The Variable Vault — Python Forest Ch.3
+# Your mission: Create the required variables and print them!
+
+# TODO 1: Create hero_name (string)
+hero_name = ""
+
+# TODO 2: Create power_level (integer > 9000)
+power_level = 0
+
+# TODO 3: Create mana_percent (float 0.0 to 100.0)
+mana_percent = 0.0
+
+# TODO 4: Print all three using an f-string
+print(f"")
+`;
+
+// ══════════════════════════════════════════════
+// ROUTING
+// ══════════════════════════════════════════════
+function goTo(page) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(page);
+  if (el) el.classList.add('active');
+
+  // Nav visibility
+  const showNav = ['dashboard','worldmap','quest','profile','leaderboard'].includes(page);
+  document.getElementById('mainNav').style.display = showNav ? 'flex' : 'none';
+
+  // Update nav active links
+  document.querySelectorAll('#navLinks a').forEach(a => {
+    a.classList.toggle('active', a.dataset.page === page);
+  });
+
+  // Page-specific init
+  if (page === 'dashboard') initDashboard();
+  if (page === 'quest') initQuest();
+  if (page === 'profile') updateProfile();
+  if (page === 'leaderboard') {}
+
+  // Scroll to top
+  window.scrollTo(0, 0);
+
+  // Trigger scroll reveals
+  setTimeout(triggerReveals, 100);
+}
+
+// ══════════════════════════════════════════════
+// LOADING
+// ══════════════════════════════════════════════
+const loadTexts = ['INITIALIZING REALM...','LOADING QUEST DATA...','SUMMONING WARRIORS...','ACTIVATING CODE SPELLS...','ENTERING THE REALM...'];
+let loadIdx = 0;
+const loadTxtEl = document.getElementById('loadTxt');
+const loadBarEl = document.getElementById('loadBar');
+
+const ltInterval = setInterval(() => {
+  loadIdx = (loadIdx + 1) % loadTexts.length;
+  loadTxtEl.textContent = loadTexts[loadIdx];
+}, 350);
+
+let loadPct = 0;
+const lbInterval = setInterval(() => {
+  loadPct += Math.random() * 18;
+  if (loadPct > 100) loadPct = 100;
+  loadBarEl.style.width = loadPct + '%';
+}, 120);
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    clearInterval(ltInterval);
+    clearInterval(lbInterval);
+    loadBarEl.style.width = '100%';
+    setTimeout(() => {
+      document.getElementById('loading').classList.add('gone');
+      // Counter animation
+      document.querySelectorAll('[data-count]').forEach(el => animCount(el, parseInt(el.dataset.count)));
+      triggerReveals();
+    }, 400);
+  }, 2200);
+});
+
+// ══════════════════════════════════════════════
+// PARTICLE CANVAS
+// ══════════════════════════════════════════════
+(function initParticles() {
+  const canvas = document.getElementById('bgCanvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function Particle() {
+    this.x = Math.random() * W;
+    this.y = Math.random() * H;
+    this.vx = (Math.random() - .5) * .4;
+    this.vy = (Math.random() - .5) * .4;
+    this.r = Math.random() * 1.5 + .3;
+    this.a = Math.random() * .5 + .1;
+    const colors = ['0,245,255','191,95,255','255,45,120','255,215,0'];
+    this.c = colors[Math.floor(Math.random() * colors.length)];
+  }
+
+  resize();
+  for (let i = 0; i < 80; i++) particles.push(new Particle());
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W;
+      if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H;
+      if (p.y > H) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${p.c},${p.a})`;
+      ctx.fill();
+    });
+    // Connect nearby particles
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < 100) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(0,245,255,${.06 * (1 - d/100)})`;
+          ctx.lineWidth = .5;
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+  window.addEventListener('resize', resize);
+})();
+
+// ══════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════
+function switchAuthTab(tab) {
+  document.getElementById('aTabLogin').classList.toggle('active', tab === 'login');
+  document.getElementById('aTabSignup').classList.toggle('active', tab === 'signup');
+  document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('signupForm').classList.toggle('hidden', tab !== 'signup');
+  hideAuthErr();
+}
+
+function showAuthErr(msg) {
+  const el = document.getElementById('authErr');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function hideAuthErr() {
+  document.getElementById('authErr').classList.remove('show');
+}
+
+function selectClass(el, cls) {
+  document.querySelectorAll('.cls-opt').forEach(o => o.classList.remove('sel'));
+  el.classList.add('sel');
+  STATE.selectedClass = cls;
+}
+
+function checkPwStrength(pwd) {
+  const bars = ['pb1','pb2','pb3','pb4'].map(id => document.getElementById(id));
+  bars.forEach(b => { b.className = 'pwb'; });
+  let score = 0;
+  if (pwd.length >= 8) score++;
+  if (/[A-Z]/.test(pwd)) score++;
+  if (/[0-9]/.test(pwd)) score++;
+  if (/[^A-Za-z0-9]/.test(pwd)) score++;
+  const cls = score <= 1 ? 'w' : score <= 2 ? 'm' : 's';
+  for (let i = 0; i < score; i++) bars[i].classList.add(cls);
+}
+
+function handleLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('loginBtn');
+  btn.textContent = 'Entering...';
+  btn.disabled = true;
+  hideAuthErr();
+  const email = document.getElementById('lEmail').value;
+  const pass = document.getElementById('lPass').value;
+
+  // Simulate auth (replace with Firebase)
+  setTimeout(() => {
+    if (email && pass.length >= 6) {
+      loginSuccess(email.split('@')[0], 'mage');
+    } else {
+      showAuthErr('Invalid credentials. Check your email and password.');
+      btn.textContent = '⚔️ Enter the Realm';
+      btn.disabled = false;
+    }
+  }, 1200);
+}
+
+function handleSignup(e) {
+  e.preventDefault();
+  const btn = document.getElementById('signupBtn');
+  btn.textContent = 'Creating warrior...';
+  btn.disabled = true;
+  hideAuthErr();
+  const name = document.getElementById('sName').value;
+  const email = document.getElementById('sEmail').value;
+  const pass = document.getElementById('sPass').value;
+
+  setTimeout(() => {
+    if (name && email && pass.length >= 6) {
+      loginSuccess(name, STATE.selectedClass);
+    } else {
+      showAuthErr('Please fill all fields. Password must be 6+ characters.');
+      btn.textContent = '🌟 Create Warrior';
+      btn.disabled = false;
+    }
+  }, 1400);
+}
+
+function handleGoogleAuth() {
+  toast('🔗', 'Google Auth', 'In production, this uses Firebase Auth', 'info');
+  setTimeout(() => loginSuccess('GoogleWarrior', 'warrior'), 1200);
+}
+
+function loginSuccess(name, cls) {
+  STATE.loggedIn = true;
+  STATE.user.name = name;
+  STATE.user.cls = cls;
+  STATE.user.avatar = CLASS_AVATARS[cls] || '⚔️';
+  // Update UI
+  document.getElementById('navAv').textContent = STATE.user.avatar;
+  document.getElementById('navXp').textContent = `⭐ ${STATE.user.xp.toLocaleString()} XP`;
+  toast('⚔️', 'Welcome to CodexQuest!', `Greetings, ${name}! Your quest begins.`, 'success');
+  goTo('dashboard');
+}
+
+function handleLogout() {
+  STATE.loggedIn = false;
+  toast('🚪', 'Logged Out', 'See you next time, warrior!', 'info');
+  goTo('landing');
+}
+
+// ══════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════
+function initDashboard() {
+  updateDashboardUI();
+  buildStreak();
+  startDailyTimer();
+}
+
+function updateDashboardUI() {
+  const u = STATE.user;
+  const el = id => document.getElementById(id);
+  el('dbAvatar').textContent = u.avatar;
+  el('dbLevel').textContent = u.level;
+  el('dbName').textContent = u.name;
+  el('dbCls').textContent = `// ${u.cls.toUpperCase()} CLASS · PYTHON FOREST`;
+  el('dbLvTxt').textContent = u.level;
+  el('dbXpCur').textContent = u.xp.toLocaleString();
+  el('dbXpNeed').textContent = u.xpNeeded.toLocaleString();
+  el('dbXpBar').style.width = ((u.xp / u.xpNeeded) * 100) + '%';
+  el('dbRank').textContent = `#${u.rank}`;
+  el('dbQDone').textContent = u.questsDone;
+  el('dbStreak').textContent = u.streak;
+  el('dbTotalXp').textContent = u.xp.toLocaleString();
+  el('dbBadges').textContent = u.badges;
+  el('dbChall').textContent = u.questsDone;
+  el('navXp').textContent = `⭐ ${u.xp.toLocaleString()} XP`;
+  el('navAv').textContent = u.avatar;
+}
+
+function buildStreak() {
+  const row = document.getElementById('streakRow');
+  if (!row) return;
+  row.innerHTML = '';
+  const days = ['M','T','W','T','F','S','S'];
+  const today = new Date().getDay();
+  days.forEach((d, i) => {
+    const div = document.createElement('div');
+    div.className = 'sd' + (i < 3 ? ' done' : '') + (i === today - 1 ? ' today' : '');
+    div.textContent = d;
+    row.appendChild(div);
+  });
+}
+
+let dailyTimerInterval;
+function startDailyTimer() {
+  if (dailyTimerInterval) clearInterval(dailyTimerInterval);
+  const update = () => {
+    const now = new Date();
+    const midnight = new Date(now); midnight.setHours(24, 0, 0, 0);
+    const diff = midnight - now;
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    const el = document.getElementById('dailyTimer');
+    if (el) el.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+  };
+  update();
+  dailyTimerInterval = setInterval(update, 1000);
+}
+function pad(n) { return String(n).padStart(2, '0'); }
+
+// ══════════════════════════════════════════════
+// QUEST PAGE + MONACO EDITOR
+// ══════════════════════════════════════════════
+function initQuest() {
+  // Timer
+  if (STATE.questTimerInterval) clearInterval(STATE.questTimerInterval);
+  STATE.questSeconds = 0;
+  STATE.questTimerInterval = setInterval(() => {
+    STATE.questSeconds++;
+    const m = Math.floor(STATE.questSeconds / 60);
+    const s = STATE.questSeconds % 60;
+    const el = document.getElementById('questTimer');
+    if (el) el.textContent = `⏱ ${pad(m)}:${pad(s)}`;
+  }, 1000);
+
+  // Monaco
+  if (!document.getElementById('monacoEditor').offsetHeight) return;
+  setTimeout(initMonaco, 200);
+}
+
+function initMonaco() {
+  if (STATE.editor) return; // Already initialized
+  if (!window.require) { setTimeout(initMonaco, 500); return; }
+
+  require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+  require(['vs/editor/editor.main'], () => {
+    monaco.editor.defineTheme('codexquest', {
+      base: 'vs-dark', inherit: true,
+      rules: [
+        { token: 'comment', foreground: '3d5a80', fontStyle: 'italic' },
+        { token: 'keyword', foreground: 'bf5fff' },
+        { token: 'string', foreground: 'ffd700' },
+        { token: 'number', foreground: 'ff6b00' },
+        { token: 'delimiter', foreground: '7a9cc4' },
+      ],
+      colors: {
+        'editor.background': '#030610',
+        'editor.foreground': '#e8f4ff',
+        'editor.lineHighlightBackground': '#0a1628',
+        'editorLineNumber.foreground': '#3d5a80',
+        'editorLineNumber.activeForeground': '#00f5ff',
+        'editor.selectionBackground': '#162444',
+        'editorCursor.foreground': '#00f5ff',
+        'editorIndentGuide.background': '#111d35',
+        'editorWidget.background': '#060d1f',
+      }
+    });
+
+    STATE.editor = monaco.editor.create(document.getElementById('monacoEditor'), {
+      value: STARTER_CODE,
+      language: 'python',
+      theme: 'codexquest',
+      fontSize: 14,
+      fontFamily: "'Share Tech Mono', 'Fira Code', monospace",
+      lineHeight: 23,
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
+      automaticLayout: true,
+      padding: { top: 14, bottom: 14 },
+      smoothScrolling: true,
+      cursorBlinking: 'phase',
+      cursorSmoothCaretAnimation: 'on',
+      renderLineHighlight: 'gutter',
+      bracketPairColorization: { enabled: true },
+      suggest: { showSnippets: true },
+      wordWrap: 'on',
+    });
+
+    // Ctrl+Enter = run
+    STATE.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, runCode);
+  });
+}
+
+function resetEditor() {
+  if (STATE.editor) STATE.editor.setValue(STARTER_CODE);
+}
+function formatCode() {
+  if (STATE.editor) STATE.editor.getAction('editor.action.formatDocument')?.run();
+}
+
+function switchOut(tab, btn) {
+  ['ocConsole','ocTests','ocAI'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
+  document.querySelectorAll('.otab').forEach(b => b.classList.remove('active'));
+  const target = document.getElementById('oc' + tab.charAt(0).toUpperCase() + tab.slice(1));
+  if (target) target.classList.remove('hidden');
+  if (btn) btn.classList.add('active');
+}
+
+async function runCode() {
+  const btn = document.getElementById('runBtn');
+  if (!btn) return;
+  btn.textContent = '⏳ Running...';
+  btn.disabled = true;
+
+  const code = STATE.editor ? STATE.editor.getValue() : '';
+  const console_el = document.getElementById('ocConsole');
+  console_el.innerHTML = '<div class="ol inf">// Executing code in sandbox...</div>';
+  switchOut('console', document.getElementById('otConsole'));
+
+  // Simulate execution (replace with Judge0 API key)
+  await new Promise(r => setTimeout(r, 900));
+  simulateExec(code);
+
+  btn.textContent = '▶ Run';
+  btn.disabled = false;
+}
+
+function simulateExec(code) {
+  const console_el = document.getElementById('ocConsole');
+  console_el.innerHTML = '';
+
+  const vars = {};
+  const lines = code.split('\n');
+  const output = [];
+
+  lines.forEach(line => {
+    line = line.trim();
+    if (line.startsWith('#') || !line) return;
+
+    // Simple assignment parser
+    const aMatch = line.match(/^(\w+)\s*=\s*(.+)$/);
+    if (aMatch) {
+      let val = aMatch[2].trim().replace(/['"]/g, '');
+      vars[aMatch[1]] = val;
+    }
+
+    // print parser
+    const pMatch = line.match(/^print\((.+)\)$/);
+    if (pMatch) {
+      let msg = pMatch[1].trim();
+      // f-string
+      if (msg.startsWith('f"') || msg.startsWith("f'")) {
+        msg = msg.slice(2, -1);
+        Object.keys(vars).forEach(k => {
+          msg = msg.replace(new RegExp(`\\{${k}\\}`, 'g'), vars[k] || '?');
+        });
+      } else {
+        msg = msg.replace(/['"]/g, '');
+      }
+      output.push(msg);
+    }
+  });
+
+  if (output.length) {
+    output.forEach(line => {
+      const d = document.createElement('div');
+      d.className = 'ol ok';
+      d.textContent = '>>> ' + line;
+      console_el.appendChild(d);
+    });
+  } else {
+    const d = document.createElement('div');
+    d.className = 'ol mut';
+    d.textContent = '// No output. Add print() statements!';
+    console_el.appendChild(d);
+  }
+}
+
+function submitCode() {
+  const code = STATE.editor ? STATE.editor.getValue() : '';
+  const results = validate(code);
+
+  // Show tests tab
+  switchOut('tests', document.getElementById('otTests'));
+
+  const ids = ['t1','t2','t3','t4'];
+  let allPass = true;
+  results.forEach((pass, i) => {
+    const s = document.getElementById(ids[i]+'s');
+    const r = document.getElementById(ids[i]+'r');
+    if (s) s.textContent = pass ? '✅' : '❌';
+    if (r) {
+      r.textContent = pass ? 'Passed' : 'Failed';
+      r.style.color = pass ? 'var(--gn)' : 'var(--pk)';
+    }
+    if (!pass) allPass = false;
+  });
+
+  if (allPass) {
+    setTimeout(() => showSuccessModal(), 700);
+  } else {
+    toast('❌', 'Tests Failed', 'Some tests didn\'t pass. Review and try again!', 'error');
+  }
+}
+
+function validate(code) {
+  const hasName = /hero_name\s*=\s*['"]\w+['"]/.test(code) && !/hero_name\s*=\s*["']["']/.test(code);
+  const plMatch = code.match(/power_level\s*=\s*(\d+)/);
+  const hasPl = plMatch && parseInt(plMatch[1]) > 9000;
+  const mpMatch = code.match(/mana_percent\s*=\s*([\d.]+)/);
+  const hasMp = mpMatch && parseFloat(mpMatch[1]) >= 0 && parseFloat(mpMatch[1]) <= 100;
+  const hasPrint = /print\s*\(\s*f["']/.test(code) && /\{hero_name\}|\{power_level\}|\{mana_percent\}/.test(code);
+  return [hasName, hasPl, hasMp, hasPrint];
+}
+
+function showSuccessModal() {
+  const hintsDeduct = STATE.hintsUsed * 25;
+  const finalXp = 150 - hintsDeduct;
+  document.getElementById('modalXp').textContent = `+${finalXp} XP`;
+  document.getElementById('modalDesc').textContent = STATE.hintsUsed > 0
+    ? `Used ${STATE.hintsUsed} hint(s). Deducted ${hintsDeduct} XP. Net reward: +${finalXp} XP`
+    : "You've mastered Variables in Python! The Variable Vault is conquered!";
+  document.getElementById('successModal').classList.remove('hidden');
+
+  // Award XP
+  gainXP(finalXp);
+  showXpPop(finalXp);
+}
+
+function closeModal() {
+  document.getElementById('successModal').classList.add('hidden');
+}
+
+function revealHint() {
+  if (STATE.hintsUsed >= 2) { toast('💡', 'No More Hints', 'You\'ve used all your hints!', 'info'); return; }
+  STATE.hintsUsed++;
+  document.getElementById('hintBox').style.display = 'block';
+  toast('💡', 'Hint Revealed', `-25 XP deducted. ${2 - STATE.hintsUsed} hints remaining.`, 'info');
+}
+
+function askSensei(topic) {
+  switchOut('ai', document.getElementById('otAI'));
+  const el = document.getElementById('ocAI');
+  el.innerHTML = '<div class="ol inf">🤖 AI Sensei is thinking...</div>';
+
+  const responses = {
+    variables: `<div class="ol inf">🤖 AI Sensei says:</div><div class="ol" style="color:var(--t2);margin-top:.5rem">A variable is a named box that stores a value. In Python:<br><br><code style="color:var(--c)">hero_name = "Ryuk"</code><br>Creates a box called "hero_name" containing the text "Ryuk".</div>`,
+    fstring: `<div class="ol inf">🤖 AI Sensei says:</div><div class="ol" style="color:var(--t2);margin-top:.5rem">F-strings embed variables in text with curly braces:<br><br><code style="color:var(--c)">name = "Ryuk"</code><br><code style="color:var(--c)">print(f"Hello, {name}!")</code><br><code style="color:var(--g)"># Output: Hello, Ryuk!</code></div>`,
+    debug: `<div class="ol inf">🤖 AI Sensei says:</div><div class="ol" style="color:var(--t2);margin-top:.5rem">Common issues to check:<br>✦ hero_name must be non-empty string<br>✦ power_level must be an integer > 9000<br>✦ mana_percent needs a decimal point (85.0)<br>✦ Use f-string syntax: print(f"...")</div>`
+  };
+
+  setTimeout(() => {
+    el.innerHTML = responses[topic] || '<div class="ol inf">🤖 Ask me something specific!</div>';
+  }, 1000);
+}
+
+// ══════════════════════════════════════════════
+// XP SYSTEM
+// ══════════════════════════════════════════════
+function gainXP(amount) {
+  STATE.user.xp += amount;
+  STATE.user.questsDone++;
+  document.getElementById('navXp').textContent = `⭐ ${STATE.user.xp.toLocaleString()} XP`;
+
+  // Level up check
+  if (STATE.user.xp >= STATE.user.xpNeeded) {
+    STATE.user.xp -= STATE.user.xpNeeded;
+    STATE.user.level++;
+    STATE.user.xpNeeded = Math.floor(STATE.user.xpNeeded * 1.4);
+    showLevelUp();
+  }
+}
+
+function showXpPop(amount) {
+  const pop = document.createElement('div');
+  pop.className = 'xp-pop';
+  pop.textContent = `+${amount} XP!`;
+  pop.style.cssText = 'left:50%;top:60%;transform:translateX(-50%)';
+  document.body.appendChild(pop);
+  setTimeout(() => pop.remove(), 2100);
+}
+
+function showLevelUp() {
+  const overlay = document.createElement('div');
+  overlay.className = 'lvl-overlay';
+  const text = document.createElement('div');
+  text.className = 'lvl-text';
+  text.innerHTML = `LEVEL UP!<br><span style="font-size:.5em">Level ${STATE.user.level}</span>`;
+  document.body.appendChild(overlay);
+  document.body.appendChild(text);
+  setTimeout(() => { overlay.remove(); text.remove(); }, 2600);
+  toast('🌟', 'LEVEL UP!', `You reached Level ${STATE.user.level}! New powers unlocked.`, 'success');
+}
+
+// ══════════════════════════════════════════════
+// PROFILE
+// ══════════════════════════════════════════════
+function updateProfile() {
+  const u = STATE.user;
+  const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setEl('pfAv', u.avatar);
+  setEl('pfLv', u.level);
+  setEl('pfName', u.name);
+  setEl('pfCls', `// ${u.cls.toUpperCase()} CLASS · PYTHON REALM`);
+}
+
+// ══════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════
+function toast(icon, title, msg, type) {
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `<span class="t-icon">${icon}</span><div><div class="t-title">${title}</div><div class="t-msg">${msg}</div></div>`;
+  wrap.appendChild(t);
+  setTimeout(() => {
+    t.classList.add('out');
+    setTimeout(() => t.remove(), 280);
+  }, 4200);
+}
+
+// ══════════════════════════════════════════════
+// COUNTER ANIMATION
+// ══════════════════════════════════════════════
+function animCount(el, target, dur = 1800) {
+  let start = 0;
+  const step = target / (dur / 16);
+  const t = setInterval(() => {
+    start += step;
+    if (start >= target) {
+      el.textContent = target.toLocaleString();
+      clearInterval(t);
+    } else {
+      el.textContent = Math.floor(start).toLocaleString();
+    }
+  }, 16);
+}
+
+// ══════════════════════════════════════════════
+// SCROLL REVEAL
+// ══════════════════════════════════════════════
+function triggerReveals() {
+  const revealObs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('vis'); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal:not(.vis)').forEach(el => revealObs.observe(el));
+
+  // Animate counters when visible
+  document.querySelectorAll('[data-count]:not(.counted)').forEach(el => {
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('counted');
+          animCount(e.target, parseInt(e.target.dataset.count));
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.5 });
+    obs.observe(el);
+  });
+}
+
+// ══════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════
+function id(s) { return document.getElementById(s); }
+
+// Init scroll reveal on load
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(triggerReveals, 300);
+
+  // Landing scroll smooth
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+    });
+  });
+});
+</script>
+</body>
+</html>
