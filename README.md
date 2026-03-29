@@ -1,3 +1,5 @@
+![CodexQuest Banner](screenshots/landing.png)
+
 # ⚔️ CodexQuest — Anime Coding RPG
 
 CodexQuest is a **gamified coding learning platform** inspired by RPG games and anime worlds.  
