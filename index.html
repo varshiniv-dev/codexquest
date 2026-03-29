@@ -1,4 +1,12 @@
 <!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="refresh" content="0; url=codexquest.html">
+</head>
+<body>
+</body>
+</html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -541,6 +549,45 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;height:62px;background:rgba(
   .hero-stats{gap:1.5rem}
   .hero-cta{flex-direction:column}
   .lb-podium{gap:.75rem}
+}
+/* Mobile Responsive Fix */
+@media (max-width: 768px) {
+
+  nav {
+    padding: 0 10px;
+  }
+
+  .nav-links {
+    display: none;
+  }
+
+  .hero {
+    padding: 40px 15px;
+  }
+
+  .hero-h {
+    font-size: 2rem !important;
+    line-height: 1.2;
+  }
+
+  .hero-sub {
+    font-size: 0.9rem;
+  }
+
+  .hero-cta {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .hero-stats {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .wrap {
+    padding: 0 15px;
+  }
+
 }
 </style>
 </head>
