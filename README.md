@@ -1,3 +1,5 @@
+https://varshiniv-dev.github.io/codexquest/
+
 ![CodexQuest Banner](screenshots/landing.png)
 
 # ⚔️ CodexQuest — Anime Coding RPG
