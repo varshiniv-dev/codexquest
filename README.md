@@ -78,7 +78,7 @@ Learning becomes fun, interactive, and engaging.
 ## 👩‍💻 Author
 
 **Varshini V**  
-CSE Student | Aspiring Developer
+CSE Student | Develpoer & Builder
 
 ---
 
